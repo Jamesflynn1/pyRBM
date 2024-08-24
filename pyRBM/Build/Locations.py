@@ -1,7 +1,5 @@
 import numpy as np
 
-import json
-
 class Location:
     def __init__(self, lat:float, long:float, name:str, loc_type:str, constants = None, loc_prefix:str="loc_"):
         self.lat = lat
@@ -70,7 +68,7 @@ class Location:
         #For ease of use and to ensure compartment label order is invariant to order construction functions are called.
         self.checkConstantsDefined()
         ordered_class_labels = sorted(self.class_labels)
-        class_label_mapping = dict(enumerate(ordered_class_labels))
+        class_label_mapping = dict((str(i),x) for i,x in enumerate(ordered_class_labels))
         initial_conds = list(np.zeros(len(self.class_labels)))
 
         if not self.inital_conditions_dict is None:
@@ -116,22 +114,11 @@ class Locations:
         for i, x in enumerate(self.locations):
             x.setDistances(list(distance_matrix[i,:].flatten()))
 
-    def writeJSON(self, filename:str):
+    def returnLocationsDict(self):
         self.checkLocationClassesDefined()
         self.computeAndSaveDistances()
 
-        locations_dict = {}
-
-        for i, x in enumerate(self.locations):
-            location_dict = x.returnDictDescription()
-            locations_dict[i] = location_dict
-
-        json_locations = json.dumps(locations_dict, indent=4, sort_keys=True)
-
-        with open(filename, "w") as outfile:
-            outfile.write(json_locations)
-        
-        return locations_dict
+        return {str(i):x.returnDictDescription() for i, x in enumerate(self.locations)}
     
     def addCoordinates(self, lat:float, long:float):
         self.coords[0].append(lat)

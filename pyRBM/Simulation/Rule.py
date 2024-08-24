@@ -1,7 +1,5 @@
-from typing import Any
 import numpy as np
 import sympy
-import matplotlib.pyplot as plt
 
 class Rule:
     def __init__(self, propensity, stoichiometry, rule_name, num_builtin_classes, locations, rule_index_sets) -> None:

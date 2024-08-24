@@ -3,11 +3,9 @@ import pyRBM.Build.Locations as Locations
 import pyRBM.Build.Rules as Rules
 import pyRBM.Build.RuleMatching as RuleMatching
 import pyRBM.Build.Utils as Utils
-import pyRBM.Build.RuleTemplates as RuleTemplates
 
-import pyRBM.Core.Json as Files
+import pyRBM.Core.Cache as Files
 
-import pyRBM.Simulation.Rule as Rule
 import pyRBM.Simulation.State as State
 import pyRBM.Simulation.Solvers as Solvers
 import pyRBM.Simulation.RuleChain as RuleChain
@@ -15,37 +13,14 @@ import pyRBM.Simulation.Trajectory as Trajectory
 
 
 import time
+import datetime
 
-
-def writeToFile():
 
 class Model:
-    def __init__(self, classes_defintions, create_locations, create_rules, write_to_file:bool = True,
-                 distance_func = Utils.createEuclideanDistanceMatrix, classes_filename = "Classes.json", location_filename:str = "Locations.json", metarule_filename:str = "MetaRules.json",
-                 matched_rules_filename:str = "LocationMatchedRules.json", model_folder:str = "/ModelFiles/"):
-        self.classes_filename = classes_filename
-        self.location_filename = location_filename
-        self.metarule_filename = metarule_filename
-        self.matched_rules_filename = matched_rules_filename
-        self.model_folder = model_folder
-
+    def __init__(self, model_name):
         self.builtin_classes = True
-
-        self.write_to_file = write_to_file
-
-    def __init__(self, start_date, solver_type:str = "Gillespie", location_filename:str = "Locations.json", matched_rules_filename:str = "LocationMatchedRules.json", classes_filename:str = "Classes.json",
-                 model_folder:str = "Backend/ModelFiles/", propensity_caching:bool = True, no_rules_behaviour:str = "step"):
-
-        self.matched_rules_filename = matched_rules_filename
-        self.location_filename = location_filename
-        self.model_folder = model_folder
-        self.classes_dict, self.builtin_classes_dict = Files.loadClasses(self.model_folder+classes_filename)
-        self.locations = Files.loadLocations(self.model_folder+self.location_filename)
-        self.rules, self.matched_indices = Files.loadMatchedRules(self.model_folder+self.matched_rules_filename, self.locations, num_builtin_classes=len(self.builtin_classes_dict))
-
-        self.model_state = State.ModelState(self.builtin_classes_dict, start_date)
-
-        self.trajectory = Rule.Trajectory(self.locations)
+        self.model_name = model_name
+        return
 
         
     def createLocations(self):
@@ -53,8 +28,10 @@ class Model:
         locations = self.create_locations_func()
         all_locations.addLocations(locations)
         # Distance computation done as part of writeJSON - set as location constants
-        self.locations = all_locations.writeJSON(f"{self.model_folder}{self.location_filename}")
+        locations = all_locations.returnLocationsDict()
         self.location_constants = all_locations.returnAllLocationConstantNames()
+
+        return locations
 
     def createRules(self):
         # Use np.identity(len()) .... for no change
@@ -63,49 +40,91 @@ class Model:
         rules = self.create_rules_func()
         all_rules.addRules(rules)
 
-        self.rules = all_rules.writeJSON(f"{self.model_folder}{self.metarule_filename}")
+        return all_rules.returnMetaRuleDict()
 
     def defineClasses(self):
         classes = Classes.Classes(self.builtin_classes)
         for class_info in self.classes_defintions:
             classes.addClass(*class_info)
-        self.defined_classes = classes.writeClassJSON(f"{self.model_folder}{self.classes_filename}").keys()
+        classes_dict = classes.returnClassDict()
+        self.defined_classes = classes_dict.keys()
 
-    def matchRules(self):
+        return classes_dict
+
+    def matchRules(self, rules):
         additional_classes = []
         if self.builtin_classes:
             additional_classes = Classes.Classes().returnBuiltInClasses()
-        RuleMatching.writeMatchedRuleJSON(self.rules, self.locations, f"{self.model_folder}{self.matched_rules_filename}",
-                                          additional_classes)
+        return RuleMatching.returnMatchedRulesDict(rules, self.locations_dict, additional_classes)
     
-    def provideDetailsForBuilding(self, classes_defintions, create_locations, create_rules, distance_func):
+    
+    def buildModel(self, classes_defintions, create_locations, create_rules, distance_func = Utils.createEuclideanDistanceMatrix,
+                   write_to_file = False,  save_model_folder:str = "/ModelFiles/", location_filename:str = "Locations", matched_rules_filename:str = "LocationMatchedRules",
+                   classes_filename:str = "Classes", save_meta_rules = False, metarule_filename:str = "MetaRules"):
+        
         self.classes_defintions = classes_defintions
         self.create_locations_func = create_locations
         self.create_rules_func = create_rules
         self.distance_func = distance_func
-    
-    def buildModel(self):
-        self.defineClasses()
-        self.createLocations()
-        self.createRules()
-        self.matchRules()
+        self.save_model_folder = save_model_folder
 
-        #self.model_initialized = True
+        self.classes_dict = self.defineClasses()
+        self.locations_dict = self.createLocations()
+        rules = self.createRules()
+        self.matched_rules_dict = self.matchRules(rules)
+
+        self.write_to_file = write_to_file
 
 
-    def loadModelFromJSONFiles(self, location_filename:str = "Locations.json", matched_rules_filename:str = "LocationMatchedRules.json",
-                           classes_filename:str = "Classes.json", model_folder:str = "Backend/ModelFiles/"):
+        if self.write_to_file:
+            if not save_meta_rules:
+                metarule_filename = None
+            else:
+                Files.writeDictToJSON(rules, f"{self.save_model_folder}{self.model_name}/{metarule_filename}")
+
+            self.save_model_folder,self.location_filename,self.matched_rules_filename,self.classes_filename,self.metarule_filename = [save_model_folder,location_filename,
+                                                                                                                                      matched_rules_filename,classes_filename,metarule_filename]
+            for model_dict, file_loc in [(self.matched_rules_dict, f"{self.save_model_folder}{self.model_name}/{self.matched_rules_filename}"),
+                                         (self.classes_dict, f"{self.save_model_folder}{self.model_name}/{self.classes_filename}"),
+                                         (self.locations_dict, f"{self.save_model_folder}{self.model_name}/{self.location_filename}")]:
+                Files.writeDictToJSON(model_dict, file_loc)
+        else:
+            if save_meta_rules:
+                print("Warning: meta rules not saved as file saving is false")
+            else:
+                self.save_model_folder,self.location_filename,self.matched_rules_filename,self.classes_filename,self.metarule_filename = [None,None,None,None,None]
+
+        self.convertToSimulation()
+
+    def convertToSimulation(self):
+        self.classes, self.builtin_classes = Files.loadClasses(classes_dict=self.classes_dict)
+        self.locations = Files.loadLocations(build_locations_dict=self.locations_dict)
+        self.rules, self.matched_indices = Files.loadMatchedRules(self.locations, num_builtin_classes=len(self.builtin_classes),
+                                                                  matched_rule_dict=self.matched_rules_dict)
+
+
+        self.trajectory = Trajectory.Trajectory(self.locations)
+        self.model_state = State.ModelState(self.builtin_classes, datetime.datetime.now())
+
+        self.model_initialized = True
+        self.solver_initialized = False
+
+    def loadModelFromJSONFiles(self, location_filename:str = "Locations", matched_rules_filename:str = "LocationMatchedRules",
+                           classes_filename:str = "Classes", model_folder:str = "Backend/ModelFiles/"):
         
         self.matched_rules_filename = matched_rules_filename
         self.location_filename = location_filename
-        self.model_folder = model_folder
-        self.classes_dict, self.builtin_classes_dict = Files.loadClasses(self.model_folder+classes_filename)
-        self.locations = Files.loadLocations(self.model_folder+self.location_filename)
-        self.rules, self.matched_indices = Files.loadMatchedRules(self.model_folder+self.matched_rules_filename, self.locations, num_builtin_classes=len(self.builtin_classes_dict))
+        self.save_model_folder = model_folder
+        self.classes_filename = classes_filename
 
-        self.model_state = State.ModelState(self.builtin_classes_dict, self.start_date)
+        self.classes, self.builtin_classes = Files.loadClasses(classes_filename = f"{self.save_model_folder}{self.model_name}/{self.classes_filename}")
+        self.locations = Files.loadLocations(locations_filename = f"{self.save_model_folder}{self.model_name}/{self.location_filename}")
+        self.rules, self.matched_indices = Files.loadMatchedRules(self.locations, num_builtin_classes=len(self.builtin_classes), 
+                                                                  matched_rules_filename= f"{self.save_model_folder}{self.model_name}/{self.matched_rules_filename}")
+
 
         self.trajectory = Trajectory.Trajectory(self.locations)
+        self.model_state = State.ModelState(self.builtin_classes, datetime.now())
 
         self.solver_initialized = False
         self.model_initialized = True
@@ -127,13 +146,16 @@ class Model:
         for location in self.locations:
             location.reset()
         # Trajectory uses current location values so needs to be defined after location values reset.
-        self.trajectory = Rule.Trajectory(self.locations)
+        self.trajectory = Trajectory.Trajectory(self.locations)
         self.model_state.reset()
         self.solver.reset()
 
-    def simulate(self, time_limit, max_iterations:int = 1000):
+    def simulate(self, start_date, time_limit, max_iterations:int = 1000):
+        self.start_date = start_date
+        self.model_state = State.ModelState(self.builtin_classes, self.start_date)
+
         if self.solver_initialized and self.model_initialized:
-            self.resetModel()
+            self.resetSimulation()
             start_perf_time = time.perf_counter()
             while self.model_state.elapsed_time < time_limit and self.model_state.iterations < max_iterations:
                 # Simulate one step should update the location objects automatically with the new compartment values.
@@ -143,10 +165,10 @@ class Model:
                 for location_index, location in enumerate(self.locations):
                     self.trajectory.addEntry(new_time, location.class_values, location_index)
 
-                 if new_time is None:
+                if new_time is None:
                     break
             end_perf_time = time.perf_counter()
             print(f"The simulation has finished after {self.model_state.elapsed_time} {self.model_state.time_measurement}, requiring {self.model_state.iterations} iterations and {end_perf_time-start_perf_time} secs of compute time")
             return self.trajectory
         else:
-            raise(ValueError("Model/solver not initialized: initialize model and then the solver."))
+            raise(ValueError("Model/solver not initialized: initialize model before the solver."))

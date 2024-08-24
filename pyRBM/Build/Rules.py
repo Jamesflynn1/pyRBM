@@ -1,6 +1,5 @@
 import numpy as np
 import sympy
-import json
 
 def returnSympyClassVarsDict(classes):
     symbols_str = ""
@@ -153,15 +152,6 @@ class Rules:
                         raise ValueError(f"Class required for the stoichiometry, {loc_stoich_class} not defined (Rule name: {rule.rule_name})")
         return True
 
-    def writeJSON(self, filename:str):
+    def returnMetaRuleDict(self):
         self.checkRules()
-        rules_dict = {}
-        for i, rule in enumerate(self.rules):
-            rule_dict = rule.returnRuleDict()
-            rules_dict[i] = rule_dict
-        
-        json_rules = json.dumps(rules_dict, indent=4, sort_keys=True)
-
-        with open(filename, "w") as outfile:
-            outfile.write(json_rules)
-        return rules_dict
+        return {str(i):rule.returnRuleDict() for i, rule in enumerate(self.rules)}

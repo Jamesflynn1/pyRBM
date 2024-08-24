@@ -1,6 +1,4 @@
 import numpy as np
-import sympy
-import json
 import pyRBM.Build.Rules as Rules
 
 

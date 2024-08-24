@@ -1,8 +1,41 @@
 import json
+import os
+
 import numpy as np
 import pyRBM.Simulation.Rule as Rule
+import pyRBM.Simulation.Location as Location
 
-def loadLocations(locations_filename):
+def writeDictToJSON(dict_to_write:dict, filename:str):
+    
+    folder =''.join([folder+'/' for folder in filename.split("/")[:-1]])
+    dir_to_create = os.path.join(os.curdir,folder)
+
+    print(dir_to_create)
+    if not os.path.exists(dir_to_create):
+        print("no")
+        os.makedirs(dir_to_create)
+
+    json_file = json.dumps(dict_to_write, indent=4, sort_keys=True)
+    with open(f"{filename}.json", "w+", encoding='utf-8') as outfile:
+            outfile.write(json_file)
+
+def readDictFromJSON(filename:str):
+    file_data = None
+    with open(filename, encoding='utf-8') as infile:
+        file_data = json.load(infile)
+    return file_data
+
+def processFilenameOrDict(filename:str, provided_dict:dict):
+    model_data = None
+    if (filename is None) and (provided_dict is None):
+        raise(ValueError("Provide either a "))
+    elif not filename is None:
+        model_data = readDictFromJSON(filename)
+    else:
+        model_data = provided_dict
+    return model_data
+
+def loadLocations(locations_filename:str = None, build_locations_dict:dict = None):
     """ Loads all locations from a model location json (see ModelCreation for details).
 
     Parameters: 
@@ -10,20 +43,19 @@ def loadLocations(locations_filename):
         
     Returns: a list of Locations corresponding to all locations in the location_file
     """
-    locations_data = None
     location_list = []
-    with open(locations_filename) as locations_file:
-        locations_data = json.load(locations_file)
+    locations_data = processFilenameOrDict(locations_filename, build_locations_dict)
+
     for loc_index in range(len(locations_data)):
         location_dict = locations_data[str(loc_index)]
-        location = Rule.Location(index=loc_index, name=location_dict["location_name"], lat=location_dict["lat"], long=location_dict["long"], loc_type=location_dict["type"],
+        location = Location.Location(index=loc_index, name=location_dict["location_name"], lat=location_dict["lat"], long=location_dict["long"], loc_type=location_dict["type"],
                                          label_mapping=location_dict["label_mapping"],
                                          initial_class_values=np.array(location_dict["initial_values"]), location_constants=location_dict["location_constants"])
         location_list.append(location)
     return location_list
     
 
-def loadMatchedRules(matched_rules_filename, locations,  num_builtin_classes):
+def loadMatchedRules(locations,  num_builtin_classes, matched_rules_filename:str = None, matched_rule_dict:dict=None):
     """ Loads all rules from a model matched rules json (see ModelCreation for details).
 
     Parameters: 
@@ -31,11 +63,10 @@ def loadMatchedRules(matched_rules_filename, locations,  num_builtin_classes):
     Returns: [a list of rules remapped to all possible location sets, 
               a 2d list of lists of satisfying indices for the corresponding rule]
     """
-    rules_data = None
     rules_list = []
     applicable_indices = []
-    with open(matched_rules_filename) as rule_file:
-        rules_data = json.load(rule_file)
+    rules_data =  processFilenameOrDict(matched_rules_filename, matched_rule_dict)
+    
     for rule_index in range(len(rules_data)):
         rules_dict = rules_data[str(rule_index)]
         stochiometries = []
@@ -51,12 +82,10 @@ def loadMatchedRules(matched_rules_filename, locations,  num_builtin_classes):
         rules_list.append(rule)
     return [rules_list, applicable_indices]
 
-def loadClasses(classes_filename, model_prefix = "model_"):
-    class_data = None
+def loadClasses(model_prefix = "model_", classes_filename:str = None, classes_dict:dict = None):
     class_dict = {}
     built_in_class_dict = {}
-    with open(classes_filename) as class_file:
-        class_data = json.load(class_file)
+    class_data = processFilenameOrDict(classes_filename, classes_dict)
 
     for class_key in list(class_data.keys()):
         if model_prefix in class_key:

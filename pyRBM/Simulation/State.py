@@ -51,6 +51,11 @@ class ModelState:
             self.model_classes[key] = 0
         self.updateCalendarInfo()
     
+    
+    def changeDate(self, new_date):
+        self.start_datetime = new_date
+        self.reset()
+
     def updateCalendarInfo(self):
 
         # https://docs.python.org/3/library/datetime.html#datetime.datetime.timetuple

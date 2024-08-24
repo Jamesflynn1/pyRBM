@@ -1,7 +1,6 @@
 # Used for propensity caching - given a rule, find all rules that require an updated propensity
 
 # Use stoichiometry information to determine which
-import pyRBM.Simulation.Rule as Rule
 import sympy
 import collections
 

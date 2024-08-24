@@ -1,7 +1,6 @@
 import numpy as np
 import pyRBM.Simulation.State as State
 
-import collections
 class Solver:
     def __init__(self, locations, rules, matched_indices, model_state:State.ModelState, use_cached_propensities:bool = True, no_rules_behaviour:str = "step", propensity_update_dict:dict = {}):
         self.locations = locations
