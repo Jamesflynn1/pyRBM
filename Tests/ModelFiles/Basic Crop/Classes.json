@@ -1,0 +1,158 @@
+{
+    "CH4": {
+        "class_measurement_unit": "m^3",
+        "class_restriction": "None"
+    },
+    "Growing_Barley": {
+        "class_measurement_unit": "Hectacres",
+        "class_restriction": "None"
+    },
+    "Growing_Cereals": {
+        "class_measurement_unit": "Hectacres",
+        "class_restriction": "None"
+    },
+    "Growing_Potatoes": {
+        "class_measurement_unit": "Hectacres",
+        "class_restriction": "None"
+    },
+    "Growing_Wheat": {
+        "class_measurement_unit": "Hectacres",
+        "class_restriction": "None"
+    },
+    "H2": {
+        "class_measurement_unit": "m^3",
+        "class_restriction": "None"
+    },
+    "Harvested_Barley": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "Harvested_Cereals": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "Harvested_Potatoes": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "Harvested_Wheat": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "N2": {
+        "class_measurement_unit": "m^3",
+        "class_restriction": "None"
+    },
+    "NH4": {
+        "class_measurement_unit": "tonnes",
+        "class_restriction": "None"
+    },
+    "Planted_Barley": {
+        "class_measurement_unit": "Hectacres",
+        "class_restriction": "None"
+    },
+    "Planted_Cereals": {
+        "class_measurement_unit": "Hectacres",
+        "class_restriction": "None"
+    },
+    "Planted_Potatoes": {
+        "class_measurement_unit": "Hectacres",
+        "class_restriction": "None"
+    },
+    "Planted_Wheat": {
+        "class_measurement_unit": "Hectacres",
+        "class_restriction": "None"
+    },
+    "Seeds_Barley": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "Seeds_Cereals": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "Seeds_Potatoes": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "Seeds_Wheat": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "Viable_Barley": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "Viable_Cereals": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "Viable_Potatoes": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "Viable_Wheat": {
+        "class_measurement_unit": "Tonnes",
+        "class_restriction": "None"
+    },
+    "model_day": {
+        "class_measurement_unit": "Day of year",
+        "class_restriction": "None"
+    },
+    "model_hour": {
+        "class_measurement_unit": "Hour of day",
+        "class_restriction": "integer"
+    },
+    "model_month_apr": {
+        "class_measurement_unit": "April",
+        "class_restriction": "indictator"
+    },
+    "model_month_aug": {
+        "class_measurement_unit": "August",
+        "class_restriction": "indictator"
+    },
+    "model_month_dec": {
+        "class_measurement_unit": "December",
+        "class_restriction": "indictator"
+    },
+    "model_month_feb": {
+        "class_measurement_unit": "February",
+        "class_restriction": "indictator"
+    },
+    "model_month_jan": {
+        "class_measurement_unit": "January",
+        "class_restriction": "indictator"
+    },
+    "model_month_jul": {
+        "class_measurement_unit": "July",
+        "class_restriction": "indictator"
+    },
+    "model_month_jun": {
+        "class_measurement_unit": "June",
+        "class_restriction": "indictator"
+    },
+    "model_month_mar": {
+        "class_measurement_unit": "March",
+        "class_restriction": "indictator"
+    },
+    "model_month_may": {
+        "class_measurement_unit": "May",
+        "class_restriction": "indictator"
+    },
+    "model_month_nov": {
+        "class_measurement_unit": "November",
+        "class_restriction": "indictator"
+    },
+    "model_month_oct": {
+        "class_measurement_unit": "October",
+        "class_restriction": "indictator"
+    },
+    "model_month_sept": {
+        "class_measurement_unit": "September",
+        "class_restriction": "indictator"
+    },
+    "model_months": {
+        "class_measurement_unit": "Month of year",
+        "class_restriction": "integer"
+    }
+}
