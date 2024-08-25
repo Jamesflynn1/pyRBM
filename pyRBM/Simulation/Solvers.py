@@ -55,8 +55,6 @@ class Solver:
                 rule_prop_update_set = rule_prop_update_set.copy()
                 for changed_model_var in changed_base_model_vars:
                     rule_prop_update_set.update(self.propensity_update_dict.get(changed_model_var, set()))
-                    if changed_model_var == "model_month_jan":
-                        print(self.propensity_update_dict.get(changed_model_var, set()))
             self.updateGivenPropensities(rule_prop_update_set)
         else:
             self.updateGivenPropensities()

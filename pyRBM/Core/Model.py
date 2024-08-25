@@ -25,7 +25,16 @@ class Model:
         
     def createLocations(self):
         all_locations = Locations.Locations(self.defined_classes, self.distance_func)
-        locations = self.create_locations_func()
+        locations = None
+        if not self.create_locations_func is None:
+            locations = self.create_locations_func()
+            self.no_location_model = False
+        else:
+            locations = [Locations.returnDefaultLocation(self.classes_defintions)]
+            print("No locations passed to model constructor.",
+            "Creating dummy location: Default, with type: any ","Will disregard rule type restrictions.")
+            print(locations)
+            self.no_location_model = True
         all_locations.addLocations(locations)
         # Distance computation done as part of writeJSON - set as location constants
         locations = all_locations.returnLocationsDict()
@@ -36,10 +45,10 @@ class Model:
     def createRules(self):
         # Use np.identity(len()) .... for no change
         all_rules = Rules.Rules(self.defined_classes, self.location_constants)
-
         rules = self.create_rules_func()
         all_rules.addRules(rules)
-
+        if self.no_location_model:
+            all_rules.removeTypeRequirement()
         return all_rules.returnMetaRuleDict()
 
     def defineClasses(self):
@@ -58,7 +67,7 @@ class Model:
         return RuleMatching.returnMatchedRulesDict(rules, self.locations_dict, additional_classes)
     
     
-    def buildModel(self, classes_defintions, create_locations, create_rules, distance_func = Utils.createEuclideanDistanceMatrix,
+    def buildModel(self, classes_defintions, create_rules, create_locations = None, distance_func = Utils.createEuclideanDistanceMatrix,
                    write_to_file = False,  save_model_folder:str = "/ModelFiles/", location_filename:str = "Locations", matched_rules_filename:str = "LocationMatchedRules",
                    classes_filename:str = "Classes", save_meta_rules = False, metarule_filename:str = "MetaRules"):
         
@@ -77,17 +86,25 @@ class Model:
 
 
         if self.write_to_file:
+            file_prefix = f"{save_model_folder}{self.model_name}/"
+            files_to_write = [(self.matched_rules_dict, file_prefix+matched_rules_filename, "matched rules dict"),
+                              (self.classes_dict, file_prefix+classes_filename, "classes dict")]
+
             if not save_meta_rules:
                 metarule_filename = None
             else:
-                Files.writeDictToJSON(rules, f"{self.save_model_folder}{self.model_name}/{metarule_filename}")
+                files_to_write.append((rules, file_prefix+metarule_filename, "meta rule dict"))
+            
+            if self.no_location_model:
+                location_filename = None
+            else:
+                files_to_write.append((self.locations_dict, file_prefix+location_filename, "locations dict"))
+
 
             self.save_model_folder,self.location_filename,self.matched_rules_filename,self.classes_filename,self.metarule_filename = [save_model_folder,location_filename,
                                                                                                                                       matched_rules_filename,classes_filename,metarule_filename]
-            for model_dict, file_loc in [(self.matched_rules_dict, f"{self.save_model_folder}{self.model_name}/{self.matched_rules_filename}"),
-                                         (self.classes_dict, f"{self.save_model_folder}{self.model_name}/{self.classes_filename}"),
-                                         (self.locations_dict, f"{self.save_model_folder}{self.model_name}/{self.location_filename}")]:
-                Files.writeDictToJSON(model_dict, file_loc)
+            for model_dict, file_loc, dict_name in files_to_write:
+                Files.writeDictToJSON(model_dict, file_loc, dict_name)
         else:
             if save_meta_rules:
                 print("Warning: meta rules not saved as file saving is false")
@@ -118,7 +135,10 @@ class Model:
         self.classes_filename = classes_filename
 
         self.classes, self.builtin_classes = Files.loadClasses(classes_filename = f"{self.save_model_folder}{self.model_name}/{self.classes_filename}")
-        self.locations = Files.loadLocations(locations_filename = f"{self.save_model_folder}{self.model_name}/{self.location_filename}")
+        if location_filename is None:
+            self.locations = Files.loadLocations(build_locations_dict=Locations.returnDefaultLocation(self.classes))
+        else:
+            self.locations = Files.loadLocations(locations_filename = f"{self.save_model_folder}{self.model_name}/{self.location_filename}")
         self.rules, self.matched_indices = Files.loadMatchedRules(self.locations, num_builtin_classes=len(self.builtin_classes), 
                                                                   matched_rules_filename= f"{self.save_model_folder}{self.model_name}/{self.matched_rules_filename}")
 
