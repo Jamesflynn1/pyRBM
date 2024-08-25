@@ -2,24 +2,30 @@ import numpy as np
 import pyRBM.Simulation.State as State
 
 class Solver:
-    def __init__(self, locations, rules, matched_indices, model_state:State.ModelState, use_cached_propensities:bool = True, no_rules_behaviour:str = "step", propensity_update_dict:dict = {}):
-        self.locations = locations
-        self.rules = rules
-        self.matched_indices = matched_indices
-        self.model_state = model_state
+    def __init__(self, use_cached_propensities:bool = True, no_rules_behaviour:str = "step"):
+
 
         self.use_cached_propensities = use_cached_propensities
-
-        self.last_rule_index_set = None
-
-        self.propensities = {}
-        if self.use_cached_propensities:
-            self.total_propensity = 0
-        self.propensity_update_dict = propensity_update_dict
+        
         # Either step or exit
         assert (no_rules_behaviour in ["step", "exit"])
         self.no_rules_behaviour = no_rules_behaviour
         self.default_step = 1
+    
+    def initialize(self, locations, rules, matched_indices, model_state:State.ModelState, propensity_update_dict:dict = {}):
+        self.locations = locations
+        self.rules = rules
+        self.matched_indices = matched_indices
+        self.model_state = model_state
+        self.propensity_update_dict = propensity_update_dict
+
+        self.reset()
+
+    def reset(self):
+        self.propensities = {}
+        self.last_rule_index_set = None
+        if self.use_cached_propensities:
+            self.total_propensity = 0
 
     def simulateOneStep(self):
         raise(TypeError("Abstract class Solver, please use a concrete implementation."))
@@ -59,9 +65,7 @@ class Solver:
         else:
             self.updateGivenPropensities()
     
-    def reset(self):
-        self.propensities = {}
-        self.last_rule_index_set = None
+
 
     # CACHE TOTAL PROPENSITY AND UPDATE USING DIFF BETWEEN OLD AND NEW CACHE VALUES.
     def returnTotalPropensity(self):
@@ -70,8 +74,8 @@ class Solver:
         else:
             return self.total_propensity
 class GillespieSolver(Solver):
-    def __init__(self, locations, rules, matched_indices, model_state:State.ModelState, use_cached_propensities:bool = True, no_rules_behaviour:str = "step", propensity_update_dict:dict = {}):
-        super().__init__(locations, rules, matched_indices, model_state, use_cached_propensities, no_rules_behaviour, propensity_update_dict)
+    def __init__(self, use_cached_propensities:bool = True, no_rules_behaviour:str = "step"):
+        super().__init__(use_cached_propensities, no_rules_behaviour)
     
     def simulateOneStep(self, current_time):
         self.performPropensityUpdates()
@@ -106,8 +110,8 @@ class GillespieSolver(Solver):
         return current_time + u2
 
 class TauLeapingGillespieSolver(Solver):
-    def __init__(self, locations, rules, matched_indices, model_state, use_cached_propensities:bool = True, no_rules_behaviour:str = "step"):
-        super().__init__(locations, rules, matched_indices, model_state, use_cached_propensities, no_rules_behaviour)
+    def __init__(self, use_cached_propensities:bool = True, no_rules_behaviour:str = "step"):
+        super().__init__(use_cached_propensities, no_rules_behaviour)
     
     def simulateOneStep(self, current_time):
         total_propensity = 0

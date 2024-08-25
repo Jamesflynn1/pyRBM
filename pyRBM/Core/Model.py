@@ -149,15 +149,15 @@ class Model:
         self.solver_initialized = False
         self.model_initialized = True
 
-    def initializeSolver(self, solver:Solvers.Solver, propensity_caching:bool = True, no_rules_behaviour:str = "step"):
+    def initializeSolver(self, solver:Solvers.Solver):
         if self.model_initialized:
-            self.no_rules_behaviour = no_rules_behaviour
-            self.propensity_caching = propensity_caching
-            if propensity_caching:
+            if solver.use_cached_propensities:
                 self.rule_propensity_update_dict = RuleChain.returnOneStepRuleUpdates(self.rules, self.locations, self.matched_indices, self.model_state.returnModelClasses())
             else:
                 self.rule_propensity_update_dict = {}
-            self.solver = solver(self.locations, self.rules, self.matched_indices, self.model_state, propensity_caching, no_rules_behaviour, self.rule_propensity_update_dict)
+            
+            self.solver = solver
+            self.solver.initialize(self.locations, self.rules, self.matched_indices, self.model_state, self.rule_propensity_update_dict)
             self.solver_initialized = True
         else:
             raise(ValueError("Model not initialized: initialize model before solver"))
@@ -172,7 +172,7 @@ class Model:
 
     def simulate(self, start_date, time_limit, max_iterations:int = 1000):
         self.start_date = start_date
-        self.model_state = State.ModelState(self.builtin_classes, self.start_date)
+        self.model_state.changeDate(self.start_date)
 
         if self.solver_initialized and self.model_initialized:
             self.resetSimulation()
