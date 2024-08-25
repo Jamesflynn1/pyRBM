@@ -29,7 +29,7 @@ def returnRuleMatchingIndices(rules, locations):
                     matchedTypeToIndices[rule_targets_i].append(location_i)
         # From the previously described location set, obtain a tuple of indices (if it exists) that satisfies the rule.
         # Do this iteratively, loop over all index sets in construction and add the new index if it isn't already inside.
-        print(f"MATCHED {matchedTypeToIndices}")
+        #print(f"MATCHED {matchedTypeToIndices}")
         rule_indices = {}
         for rule_targets_i in range(len(rule["target_types"])):
             atleast_one_satisifying = False
@@ -87,7 +87,6 @@ def obtainPropensity(rule, locations, builtin_classes):
         # Add the built in class at the end of the location classes
 
         new_propensities.append(new_propensity)
-    print(new_propensities)
     return new_propensities
 
 def obtainStochiometry(rule, locations):

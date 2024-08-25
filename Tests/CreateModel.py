@@ -81,10 +81,10 @@ def supplyChainLocations():
     return all_locations
 
 model = Model.Model("Basic Crop")
-model.buildModel(supplyChainClasses, supplyChainLocations, returnCropRules, write_to_file = True, save_model_folder="Tests/ModelFiles/")
+model.buildModel(supplyChainClasses, returnCropRules, write_to_file = True, save_model_folder="Tests/ModelFiles/")
 
 model.initializeSolver(Solvers.GillespieSolver)
 start_date = datetime.datetime(2001, 8, 1)
 model.simulate(start_date, 100)
 
-model.trajectory.plotAllClassesOverTime(1)
+model.trajectory.plotAllClassesOverTime(0)

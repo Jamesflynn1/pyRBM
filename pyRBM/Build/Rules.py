@@ -1,6 +1,12 @@
 import numpy as np
 import sympy
 
+def isNonDefaultTargetArray(target_array):
+    for x in target_array:
+        if not (x is None or x == "any" or x == "Any"):
+            return True
+    return False
+
 def returnSympyClassVarsDict(classes):
     symbols_str = ""
     for class_label in classes:
@@ -43,7 +49,6 @@ class Rule:
         assert(len(target_indices) == len(values))
         for i, index in enumerate(target_indices):
             value = values[i]
-            print(f"{value}")
             if not self.propensities[index] is None:
                 raise(ValueError(f"Overwriting already set propensity is forbidden. Target location {self.targets[index]} at position {str(index+1)}"))
 
@@ -60,7 +65,6 @@ class Rule:
             subsitution_dict[class_symbols[class_str]] = safe_num
         res = formula.evalf(subs=subsitution_dict)
         # We require that a numerical result is outputted and no symbols are left over.
-        print(res)
         assert(isinstance(res, (sympy.core.numbers.Float, sympy.core.numbers.Zero)))
         return True
 
@@ -124,6 +128,15 @@ class Rules:
         # DOESN'T CHECK FOR EXISTENCE OF CONSTANTS FOR EACH LOCATION - THIS IS DONE IN THE RULE MATCHING
         self.location_constants_symbols = returnSympyClassVarsDict(location_constants)
     
+    def removeTypeRequirement(self, default_type = "any"):
+        for rule in self.rules:
+            if len(rule.targets) >= 2:
+                raise(ValueError(f"ERROR: rule {rule.rule_name} has {len(rule.targets)} location targets for a locationless model (requires len(targets == 1))"))
+            elif isNonDefaultTargetArray(rule.targets):
+                print(f"Warning: rule {rule.rule_name} has non default (i.e not all elements are None or 'any') target list {rule.targets}")
+                print(f"Ignoring type restrictions for no location models.")
+            rule.targets = [default_type for _ in range(len(rule.targets))]
+
     def addRule(self, rule:Rule):
         if isinstance(rule, Rule):
             self.rules.append(rule)
@@ -146,7 +159,6 @@ class Rules:
                     
             for stoichiometry_class_index in range(len(rule.stoichiometry_classes)):
                 location_stoichiometry_class = rule.stoichiometry_classes[stoichiometry_class_index]
-                print(location_stoichiometry_class)
                 for loc_stoich_class in location_stoichiometry_class:
                     if not loc_stoich_class in self.defined_classes:
                         raise ValueError(f"Class required for the stoichiometry, {loc_stoich_class} not defined (Rule name: {rule.rule_name})")
