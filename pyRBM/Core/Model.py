@@ -5,6 +5,7 @@ import pyRBM.Build.RuleMatching as RuleMatching
 import pyRBM.Build.Utils as Utils
 
 import pyRBM.Core.Cache as Files
+import pyRBM.Core.Plotting as Plot
 
 import pyRBM.Simulation.State as State
 import pyRBM.Simulation.Solvers as Solvers
@@ -14,13 +15,16 @@ import pyRBM.Simulation.Trajectory as Trajectory
 
 import time
 import datetime
+import collections
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as anim
+import numpy as np
 
 class Model:
-    def __init__(self, model_name):
+    def __init__(self, model_name:str):
         self.builtin_classes = True
         self.model_name = model_name
-        return
 
         
     def createLocations(self):
@@ -33,7 +37,6 @@ class Model:
             locations = [Locations.returnDefaultLocation(self.classes_defintions)]
             print("No locations passed to model constructor.",
             "Creating dummy location: Default, with type: any ","Will disregard rule type restrictions.")
-            print(locations)
             self.no_location_model = True
         all_locations.addLocations(locations)
         # Distance computation done as part of writeJSON - set as location constants
@@ -149,16 +152,28 @@ class Model:
         self.solver_initialized = False
         self.model_initialized = True
 
-    def initializeSolver(self, solver:Solvers.Solver, propensity_caching:bool = True, no_rules_behaviour:str = "step"):
+    def initializeSolver(self, solver:Solvers.Solver):
         if self.model_initialized:
-            self.no_rules_behaviour = no_rules_behaviour
-            self.propensity_caching = propensity_caching
-            if propensity_caching:
+            if solver.use_cached_propensities:
                 self.rule_propensity_update_dict = RuleChain.returnOneStepRuleUpdates(self.rules, self.locations, self.matched_indices, self.model_state.returnModelClasses())
             else:
                 self.rule_propensity_update_dict = {}
-            self.solver = solver(self.locations, self.rules, self.matched_indices, self.model_state, propensity_caching, no_rules_behaviour, self.rule_propensity_update_dict)
+
+
+            self.simulation_elapsed_times = []
+            self.simulation_iterations = []
+            self.simulation_number = 0
+
+            self.solver = solver
+            self.solver.initialize(self.locations, self.rules, self.matched_indices, self.model_state, self.rule_propensity_update_dict)
             self.solver_initialized = True
+
+            self.debug = solver.debug
+            if self.debug:
+                self.prior_iterations_data = collections.defaultdict(list)
+                # Remove manual change required for new solver data collection fields here
+                self.solver_diag_data = SolverData(fields=["rule_triggered", "rule_index_set", "total_propensity"])
+                self.model_debug_plot = Plot.SolverDataPlotting(self)
         else:
             raise(ValueError("Model not initialized: initialize model before solver"))
 
@@ -170,9 +185,10 @@ class Model:
         self.model_state.reset()
         self.solver.reset()
 
-    def simulate(self, start_date, time_limit, max_iterations:int = 1000):
+    def simulate(self, start_date, time_limit, max_iterations:int = 10000):
+        self.simulation_number += 1
         self.start_date = start_date
-        self.model_state = State.ModelState(self.builtin_classes, self.start_date)
+        self.model_state.changeDate(self.start_date)
 
         if self.solver_initialized and self.model_initialized:
             self.resetSimulation()
@@ -187,8 +203,40 @@ class Model:
 
                 if new_time is None:
                     break
+                if self.debug:
+                    self.solver_diag_data.updateData(self.solver.current_stats)
             end_perf_time = time.perf_counter()
-            print(f"The simulation has finished after {self.model_state.elapsed_time} {self.model_state.time_measurement}, requiring {self.model_state.iterations} iterations and {end_perf_time-start_perf_time} secs of compute time")
+            time_elapsed = end_perf_time-start_perf_time
+            
+            print(f"Simulation {self.simulation_number} has finished after {self.model_state.elapsed_time} {self.model_state.time_measurement}, requiring {self.model_state.iterations} iterations and {time_elapsed} secs of compute time")
+
+            self.simulation_elapsed_times.append(time_elapsed)
+            self.simulation_iterations.append(self.model_state.iterations)
+            if self.debug:
+                self.solver_diag_data.saveSolverPerSimulationData()
             return self.trajectory
         else:
             raise(ValueError("Model/solver not initialized: initialize model before the solver."))
+
+    def printSimulationPerformanceStats(self):
+        print("\n")
+        print(f"Completed {self.simulation_number} simulations with the following stats")
+        print(f"Iterations:\n Mean: {np.mean(self.simulation_iterations)}, Std: {np.std(self.simulation_iterations)}")
+        print(f"Simulation Elapsed Time:\n Mean: {np.mean(self.simulation_elapsed_times)}, Std: {np.std(self.simulation_elapsed_times)}")
+
+class SolverData:
+    def __init__(self, fields):
+        self.fields = fields
+        self.iterations_data =  [collections.defaultdict(list)]
+        self.iterations_frequency = [{field:collections.defaultdict(int) for field in fields}]
+
+    def updateData(self, update_dict):
+        iteration_data = self.iterations_data[-1]
+        iteration_frequency = self.iterations_frequency[-1]
+        for key, value in update_dict.items():
+            iteration_frequency[key][value] += 1
+            iteration_data[key].append(value)
+
+    def saveSolverPerSimulationData(self):
+        self.iterations_data.append(collections.defaultdict(list))
+        self.iterations_frequency.append({field:collections.defaultdict(int) for field in self.fields})

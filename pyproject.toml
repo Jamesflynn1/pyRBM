@@ -9,12 +9,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyRBM"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="James Flynn", email="jameswflynn@hotmail.co.uk" },
 ]
 description = "A Python framework to build and simulate stochastic rules-based models"
 readme = "README.md"
+license = {text = "GNU General Public License v3 (GPLv3)"}
 requires-python = ">=3.4"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -25,7 +26,11 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
+keywords = ["SSA", "Rules Based", "Spatial Modelling", "Stochastic Modelling", "Gillespie Algorithm", "Mathematical Modelling", "SymPy"]
 
 [project.urls]
 Homepage = "https://github.com/Jamesflynn1/pyRBM/"
+Documentation = "https://pyrbm.readthedocs.io/en/latest/index.html"
+Repository = "https://github.com/Jamesflynn1/pyRBM/"
 Issues = "https://github.com/Jamesflynn1/pyRBM/issues"
+Changelog = "https://github.com/Jamesflynn1/pyRBM/releases"

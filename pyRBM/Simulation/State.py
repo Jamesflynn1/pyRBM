@@ -34,28 +34,28 @@ class ModelState:
             self.current_datetime = start_datetime
         else:
             raise(ValueError(f"Start date must be of type datetime not {type(start_datetime)}"))
-        self.initaliseCalendarInfo()
+        self._initaliseCalendarInfo()
         
     def reset(self):
         self.elapsed_time = 0
         self.iterations = 0
         self.current_datetime = self.start_datetime
         self.changed_vars = [classes for classes in list(self.model_classes.keys())]
-        self.updateCalendarInfo()
+        self._updateCalendarInfo()
 
     # Convert the self.current_datetime into model variables used
-    def initaliseCalendarInfo(self):
+    def _initaliseCalendarInfo(self):
         # Initialise all indicators to zero and perform the standard update step.
         for key in self.IMPLEMENTED_MODEL_CLASSES:
             self.model_classes[key] = 0
-        self.updateCalendarInfo()
+        self._updateCalendarInfo()
     
     
     def changeDate(self, new_date):
         self.start_datetime = new_date
         self.reset()
 
-    def updateCalendarInfo(self):
+    def _updateCalendarInfo(self):
 
         # https://docs.python.org/3/library/datetime.html#datetime.datetime.timetuple
         current_datetime_info = self.current_datetime.timetuple()
@@ -94,10 +94,10 @@ class ModelState:
         if new_time == None:
             print("Ending model simulation")
             return
-        self.updateTime(new_time)
+        self._updateTime(new_time)
         self.iterations += 1
 
-    def updateTime(self, new_time):
+    def _updateTime(self, new_time):
         time_change = None
         time_diff = new_time - self.elapsed_time
         if self.time_measurement == "hours":
@@ -110,7 +110,7 @@ class ModelState:
         self.current_datetime = self.current_datetime + time_change
         self.elapsed_time = new_time
 
-        self.updateCalendarInfo()
+        self._updateCalendarInfo()
         
     def returnModelClassesValues(self):
         return self.model_classes.values()

@@ -24,12 +24,13 @@ class Rule:
                     f=sympy.lambdify(formula_symbols, formula.simplify(), "numpy")
                     self.contains_location_constant.append(False)
                 else:
-                    applicable_indices = self.findIndices(rule_index_sets, slot_i)
+                    applicable_indices = self._findIndices(rule_index_sets, slot_i)
                     #formula_without_constants = self.subsituteConstants(formula_str, {key:"" for key in list(locations[applicable_indices[0]].location_constants.keys())})
 
-                    f = {loc_index: sympy.lambdify(formula_symbols, sympy.parse_expr(self.subsituteConstants(formula_str, locations[loc_index].location_constants)).simplify(), "numpy") for loc_index in applicable_indices}
+                    f = {loc_index: sympy.lambdify(formula_symbols, sympy.parse_expr(self._subsituteConstants(formula_str, locations[loc_index].location_constants)).simplify(), "numpy") 
+                         for loc_index in applicable_indices}
 
-                    self.sympy_formula.append(sympy.parse_expr(self.subsituteConstants(formula_str, locations[applicable_indices[0]].location_constants)))
+                    self.sympy_formula.append(sympy.parse_expr(self._subsituteConstants(formula_str, locations[applicable_indices[0]].location_constants)))
 
                     self.contains_location_constant.append(True)
 
@@ -41,20 +42,20 @@ class Rule:
         self.stoichiometry = stoichiometry
         self.contains_location_constant = np.array(self.contains_location_constant)
     
-    def subsituteConstants(self, formula_str:str, location_constants:dict):
+    def _subsituteConstants(self, formula_str:str, location_constants:dict):
         out_formula = formula_str
         for loc_constant in list(location_constants.keys()):
             out_formula = out_formula.replace(loc_constant, str(location_constants[loc_constant]))
         return out_formula
 
-    def findIndices(self, rule_index_sets, slot_index):
+    def _findIndices(self, rule_index_sets, slot_index):
         possible_indices = set([])
 
         for index_set in rule_index_sets:
             possible_indices.add(index_set[slot_index])
 
         return list(possible_indices)
-    def locationAttemptedCompartmentChange(self, class_values, location_index, times_triggered):
+    def _locationAttemptedCompartmentChange(self, class_values, location_index, times_triggered):
         new_values = class_values + times_triggered*self.stoichiometry[location_index]
 
         return new_values
@@ -82,9 +83,9 @@ class Rule:
         new_class_values = []
 
         for loc_i, location in enumerate(locations):
-            new_location_values = self.locationAttemptedCompartmentChange(location.class_values, loc_i, times_triggered)
+            new_location_values = self._locationAttemptedCompartmentChange(location.class_values, loc_i, times_triggered)
             # CHANGE TODO
-            if np.any(new_location_values<-1):
+            if np.any(new_location_values<-20):
                 negative = True
                 break
             else:

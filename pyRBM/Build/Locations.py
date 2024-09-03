@@ -67,6 +67,7 @@ class Location:
     def addAndSetConstants(self, constants_dict:dict):
         self.addConstants(list(constants_dict.keys()))
         self.setConstants(constants_dict)
+        
     def returnConstantNames(self):
         if self.location_constants is not None:
             return list(self.location_constants.keys())
@@ -104,7 +105,7 @@ class Locations:
 
         self.type_register = {}
         
-    def checkLocationClassesDefined(self):
+    def _checkLocationClassesDefined(self):
         for location in self.locations:
             for location_class_label in location.class_labels:
                 if location_class_label not in self.defined_classes:
@@ -117,15 +118,15 @@ class Locations:
             constant_names.update(location.returnConstantNames())
         return list(constant_names)
     
-    def computeAndSaveDistances(self):
+    def _computeAndSaveDistances(self):
         self.coords =  np.array(self.coords)
         distance_matrix =  self.distance_function(self.coords[0,:], self.coords[1,:])
         for i, x in enumerate(self.locations):
             x.setDistances(list(distance_matrix[i,:].flatten()))
 
     def returnLocationsDict(self):
-        self.checkLocationClassesDefined()
-        self.computeAndSaveDistances()
+        self._checkLocationClassesDefined()
+        self._computeAndSaveDistances()
 
         return {str(i):x.returnDictDescription() for i, x in enumerate(self.locations)}
     
@@ -133,7 +134,7 @@ class Locations:
         self.coords[0].append(lat)
         self.coords[1].append(long)
     
-    def registerTypeClass(self, type_str:str, type_class):
+    def _registerTypeClass(self, type_str:str, type_class):
         if type_str in self.type_register:
             raise(ValueError(f"Type {type_str} already has an associated class {str(self.type_register[type_str])}"))
         else:
@@ -149,7 +150,7 @@ class Locations:
                 else:
                     raise(TypeError(f"Location type {location.loc_type} is already associated with class {self.type_register[location.loc_type]}, not class {type(location)}"))
             else:
-                self.registerTypeClass(location.loc_type, type(location))
+                self._registerTypeClass(location.loc_type, type(location))
                 self.locations.append(location)
                 self.addCoordinates(location.lat, location.long)
         else:
