@@ -142,10 +142,7 @@ class CropRegions:
             if len(constants) == 0:
                 constants = extractColumns(region_row, exlude_list=["Name","Lat","Long"])
             
-            print(region_row["Lat"])
-            print(crop_stages.returnBasicStageDict())
             region = Utils.FarmRegion(crop_stages.returnBasicStageDict(), region_row["Lat"], region_row["Long"], region_row["Name"])
-            print(region_row.keys()[0])
             region.addAndSetConstants({constant.replace(" (Ha)","").replace(" ", "_"):float(region_row[constant]) for constant in constants})
             
             region.setInitialConditions({f"{crop}_Seeds":float(crop_stages.crop_info[crop]["Starting Seeds"]) for crop in crop_stages.crops})

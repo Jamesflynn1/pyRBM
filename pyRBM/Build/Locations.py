@@ -1,5 +1,11 @@
 import numpy as np
 
+def returnDefaultLocation(defined_classes):
+    default_loc = Location(0, 0, "Default", "any")
+    default_loc.addClassLabels([class_tuple[0] for class_tuple in defined_classes])
+    return default_loc
+
+
 class Location:
     def __init__(self, lat:float, long:float, name:str, loc_type:str, constants = None, loc_prefix:str="loc_"):
         self.lat = lat
@@ -20,6 +26,9 @@ class Location:
         self.locations_variables = {}
 
         self.inital_conditions_dict = None
+    def addClassLabels(self, class_labels:list):
+        for class_label in class_labels:
+            self.class_labels.add(class_label)
 
     def addConstants(self, constants:list):
         if constants is not None:

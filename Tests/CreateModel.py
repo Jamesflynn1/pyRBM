@@ -4,8 +4,13 @@ import pyRBM.Core.Model as Model
 import pyRBM.Build.Locations as ModelLocations
 import pyRBM.Build.RuleTemplates as BasicRules
 import pyRBM.Simulation.Solvers as Solvers
+
+import cProfile
+import re
+
+
 # seeding_rate in tonnes/ha (hectacre is 2.47105 acres)
-# 39.3679 bushels of wheat is a tonne 
+# 39.3679 bushels of wheat is a tonne
 model_constants = {
     "Wheat_seeding_rate":0.11,
     "Cereals_seeding_rate":0.2,
@@ -31,7 +36,7 @@ crops = ["Wheat", "Cereals", "Barley", "Potatoes"]
 for crop in crops:
     supplyChainClasses +=  [[f"Seeds_{crop}", "Tonnes"], [f"Planted_{crop}", "Hectacres"], [f"Growing_{crop}", "Hectacres"], [f"Viable_{crop}", "Tonnes"], [f"Harvested_{crop}", "Tonnes"]]
 
-def returnCropRules():    
+def returnCropRules():
     rules = []
 
     # Crop rules
@@ -81,10 +86,19 @@ def supplyChainLocations():
     return all_locations
 
 model = Model.Model("Basic Crop")
-model.buildModel(supplyChainClasses, supplyChainLocations, returnCropRules, write_to_file = True, save_model_folder="Tests/ModelFiles/")
+model.buildModel(supplyChainClasses, returnCropRules, supplyChainLocations, write_to_file = True, save_model_folder="Tests/ModelFiles/")
 
-model.initializeSolver(Solvers.GillespieSolver)
+model_solver = Solvers.HKOSolver(debug=False)
+#model_solver = Solvers.GillespieSolver(use_cached_propensities = True, no_rules_behaviour="step")
+model.initializeSolver(model_solver)
+
 start_date = datetime.datetime(2001, 8, 1)
-model.simulate(start_date, 100)
+cProfile.run('model.simulate(start_date,1000)')
 
-model.trajectory.plotAllClassesOverTime(1)
+model.simulate(start_date, 1000)
+
+
+#for x in range(1000):
+
+model.printSimulationPerformanceStats()
+model.trajectory.plotAllClassesOverTime(0)

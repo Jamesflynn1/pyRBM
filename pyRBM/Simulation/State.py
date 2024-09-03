@@ -17,7 +17,6 @@ class ModelState:
         for model_class in model_classes:
             if model_class in self.IMPLEMENTED_MODEL_CLASSES:
                 self.model_classes[model_class] = None
-                print(f"{model_class} implemented")
             else:
                 self.model_classes[model_class] = None
                 raise(ValueError(f"Model class {model_class} not implemented"))

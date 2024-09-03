@@ -11,7 +11,7 @@ class SingleLocationRule(Rules.Rule):
               self.addSimplePropensityFunction([0], [propensity], [propensity_classes])
 
 class SingleLocationProductionRule(SingleLocationRule):
-       def __init__(self, target, reactant_classes, reactant_amount, 
+       def __init__(self, target, reactant_classes, reactant_amount,
                     product_classes, product_amount,
                     propensity, propensity_classes, 
                     rule_name="SINGLE LOCATION PRODUCTION RULE"):

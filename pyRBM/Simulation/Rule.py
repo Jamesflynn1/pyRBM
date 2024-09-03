@@ -27,7 +27,8 @@ class Rule:
                     applicable_indices = self.findIndices(rule_index_sets, slot_i)
                     #formula_without_constants = self.subsituteConstants(formula_str, {key:"" for key in list(locations[applicable_indices[0]].location_constants.keys())})
 
-                    f = {loc_index: sympy.lambdify(formula_symbols, sympy.parse_expr(self.subsituteConstants(formula_str, locations[loc_index].location_constants)).simplify(), "numpy") for loc_index in applicable_indices}
+                    f = {loc_index: sympy.lambdify(formula_symbols, sympy.parse_expr(self.subsituteConstants(formula_str, locations[loc_index].location_constants)).simplify(), "numpy") 
+                         for loc_index in applicable_indices}
 
                     self.sympy_formula.append(sympy.parse_expr(self.subsituteConstants(formula_str, locations[applicable_indices[0]].location_constants)))
 
@@ -84,7 +85,7 @@ class Rule:
         for loc_i, location in enumerate(locations):
             new_location_values = self.locationAttemptedCompartmentChange(location.class_values, loc_i, times_triggered)
             # CHANGE TODO
-            if np.any(new_location_values<-1):
+            if np.any(new_location_values<-20):
                 negative = True
                 break
             else:

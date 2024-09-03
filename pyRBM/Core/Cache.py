@@ -5,18 +5,20 @@ import numpy as np
 import pyRBM.Simulation.Rule as Rule
 import pyRBM.Simulation.Location as Location
 
-def writeDictToJSON(dict_to_write:dict, filename:str):
+def writeDictToJSON(dict_to_write:dict, filename:str, dict_name:str=""):
     
     folder =''.join([folder+'/' for folder in filename.split("/")[:-1]])
     dir_to_create = os.path.join(os.curdir,folder)
 
-    print(dir_to_create)
     if not os.path.exists(dir_to_create):
-        print("no")
+        print(f"Creating folder: {dir_to_create}")
         os.makedirs(dir_to_create)
 
     json_file = json.dumps(dict_to_write, indent=4, sort_keys=True)
     with open(f"{filename}.json", "w+", encoding='utf-8') as outfile:
+            if dict_name != "":
+                dict_name += " "
+            print(f"Writing {dict_name}to file: {filename}.json")
             outfile.write(json_file)
 
 def readDictFromJSON(filename:str):
