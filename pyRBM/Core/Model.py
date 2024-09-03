@@ -22,10 +22,9 @@ import matplotlib.animation as anim
 import numpy as np
 
 class Model:
-    def __init__(self, model_name):
+    def __init__(self, model_name:str):
         self.builtin_classes = True
         self.model_name = model_name
-        return
 
         
     def createLocations(self):

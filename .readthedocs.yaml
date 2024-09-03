@@ -34,3 +34,11 @@ sphinx:
 python:
   install:
     - requirements: docs/requirements.txt
+
+jobs:
+  pre_build:
+    - sphinx-apidoc -f -o docs/source pyRBM
+
+formats:
+  - pdf
+  - epub

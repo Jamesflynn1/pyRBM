@@ -69,12 +69,3 @@ class FrequencyBarChart:
             self.current_simulation += 1
 
         return tuple(changed_plot_elements)
-
-def frequencyBarChart(plot, data_array, title, x_label):
-        data_hist = np.unique_counts(data_array)
-        
-        #rule_names = [self.rules[rule_i].rule_name for rule_i in range(len(self.rules))]
-        #plt.bar(rule_names, rule_hist[0])
-        plot.bar(data_hist.values, data_hist.counts)
-        plot.title.set_text(title)
-        plot.set(xlabel=x_label, ylabel='Frequency')
