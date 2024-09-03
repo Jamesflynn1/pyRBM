@@ -84,7 +84,7 @@ class Rule:
             sympy_formula = sympy.parse_expr(self.propensities[index], local_dict=symbols)
             self.validateFormula(sympy_formula, symbols)
             
-    def mergeClassLists(self):
+    def _mergeClassLists(self):
         # Maps new index to class label
         self.rule_classes = []
         for i, target in enumerate(self.targets):
@@ -103,7 +103,7 @@ class Rule:
     def returnRuleDict(self):
         # Check performed in Rules class
         # self.checkRuleDefinition(builtin_class_symbols, locations_constants)
-        self.mergeClassLists()
+        self._mergeClassLists()
 
         # UNPACK DEF TO SPECIFIC LOCATION
         rule_dict = {"name":self.rule_name, "target_types":self.targets, "required_classes":self.rule_classes,
@@ -147,7 +147,7 @@ class Rules:
         for rule in rules:
             self.addRule(rule)
     
-    def checkRules(self):
+    def _checkRules(self):
         for rule in self.rules:
             rule.checkRuleDefinition(self.builtin_symbols, self.location_constants_symbols)
 
@@ -165,5 +165,5 @@ class Rules:
         return True
 
     def returnMetaRuleDict(self):
-        self.checkRules()
+        self._checkRules()
         return {str(i):rule.returnRuleDict() for i, rule in enumerate(self.rules)}

@@ -4,7 +4,7 @@
 import sympy
 import collections
 
-def classToRuleDict(rules, locations, matched_indices, base_classes):
+def _classToRuleDict(rules, locations, matched_indices, base_classes):
     ctr_dict = collections.defaultdict(set)
     base_ctr_dict = collections.defaultdict(set)
     for rule_i in range(len(matched_indices)):
@@ -23,7 +23,7 @@ def classToRuleDict(rules, locations, matched_indices, base_classes):
     return ctr_dict, base_ctr_dict
 
 # Use propensity infomation to determine which rules require updating based on a change in class value
-def ruleToClassesDict(rules, matched_indices):
+def _ruleToClassesDict(rules, matched_indices):
     rtc_dict = collections.defaultdict(set)
     for rule_i in range(len(matched_indices)):
         rule = rules[rule_i]
@@ -34,7 +34,7 @@ def ruleToClassesDict(rules, matched_indices):
     return rtc_dict
 
 # Returns a dictionary that maps a rule index to a set of all rule indices that have a changed propensity after a rule trigger.
-def ruleToRule(rtc_dict, ctr_dict):
+def _ruleToRule(rtc_dict, ctr_dict):
     rtr_dict = {rule_location_key : set([])for rule_location_key in list(rtc_dict.keys())}
 
     for rule_location_key in list(rtr_dict.keys()):
@@ -44,6 +44,6 @@ def ruleToRule(rtc_dict, ctr_dict):
     return rtr_dict
 
 def returnOneStepRuleUpdates(rules, locations, matched_indices, base_classes):
-    rtc_dict = ruleToClassesDict(rules, matched_indices)
-    ctr_dict, base_ctr_dict = classToRuleDict(rules, locations, matched_indices, base_classes)
-    return ruleToRule(rtc_dict, ctr_dict)|base_ctr_dict
+    rtc_dict = _ruleToClassesDict(rules, matched_indices)
+    ctr_dict, base_ctr_dict = _classToRuleDict(rules, locations, matched_indices, base_classes)
+    return _ruleToRule(rtc_dict, ctr_dict)|base_ctr_dict
