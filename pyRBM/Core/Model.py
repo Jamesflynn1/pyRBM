@@ -37,7 +37,6 @@ class Model:
             locations = [Locations.returnDefaultLocation(self.classes_defintions)]
             print("No locations passed to model constructor.",
             "Creating dummy location: Default, with type: any ","Will disregard rule type restrictions.")
-            print(locations)
             self.no_location_model = True
         all_locations.addLocations(locations)
         # Distance computation done as part of writeJSON - set as location constants
