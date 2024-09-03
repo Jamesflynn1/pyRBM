@@ -63,10 +63,3 @@ Feedback and suggestions are welcome (either create an issue or start a discussi
 # Known issues:
 - Model state variables don't trigger a recomputation of propensities when propensity_caching = True.
 - Executing simulate twice leads to an error, reinitialising the solver before second execution fixes it for now!
-
-
-To Answer
-What does this project do?
-Why is this project useful?
-How do I get started?
-Where can I get more help, if I need it?
