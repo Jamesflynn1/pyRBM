@@ -1,11 +1,25 @@
+# pyRBM: a Python Rules-Based modelling framework
 
-What does this project do?
-Why is this project useful?
-How do I get started?
-Where can I get more help, if I need it?
+For API reference please see the documentation site: https://pyrbm.readthedocs.io/en/latest/index.html
 
 
-The framework is in pre-alpha development and components are lightly tested, if at all - use of the framework is at the users risk. Any feedback or suggestions for improvement is welcome (either create an issue or start a discussion.
+This project aims to provide an easy to understand framework to model and then simulate stochastic rules-based models (and hopefully general rules-based models in the future versions).
+
+We aim to enable both applied modelling and research modelling - particularly large-sized model development.
+
+pyRBM features:
+- Caching of Gillespie propenisities and other Gillespie enhancements to significantly reduce simulation time.
+- Utilsation of SymPy to define and compile a wide range of numerical expressions and functions
+- Usage of a calendar start date and exposed calendar infomation for utilisation within the model (e.g. indicator variables of what the current month is) - enabling utilisation of dated time series and accurate seasonality effects.
+- Rule templates to speed up the defination of common rule types.
+- Standard interface for simulation algorithms in the Solver class, along with some shared functions to reduce development workload (e.g. updating propenties is shared by all classes).
+- Spatial modelling built-in, as simple as defining a distance function between latitudes and longitudes .
+- "Rule Matching" - define a rule (a "Meta Rule") and the location types that can satisfy the rule. The "Rule Matching" algorithm will find all combinations of locations that match the rule ("Index Sets").
+The Meta Rule together with the Index Set, form a subrule ("Matched Rule" within the code). This massively simplifies the creation of large models.
+
+The framework is in pre-alpha development and components are lightly tested - use of the framework is at the users risk. 
+
+Feedback and suggestions are welcome (either create an issue or start a discussion).
 
 # Implemented Features
 ### Core:
@@ -49,3 +63,10 @@ The framework is in pre-alpha development and components are lightly tested, if 
 # Known issues:
 - Model state variables don't trigger a recomputation of propensities when propensity_caching = True.
 - Executing simulate twice leads to an error, reinitialising the solver before second execution fixes it for now!
+
+
+To Answer
+What does this project do?
+Why is this project useful?
+How do I get started?
+Where can I get more help, if I need it?
