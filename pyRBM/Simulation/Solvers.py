@@ -131,23 +131,35 @@ class HKOSolver(Solver):
     
     def reset(self):
         super().reset()
+        # Rule index -> Subrule index -> subrule propensity
+        # This overwrites the default rule index -> rule propensity map defined in super.reset()
         self.propensities = {str(rule_i):{str(matched_indices_i):0
                                           for matched_indices_i in range(len(self.matched_indices[rule_i]))}
                                             for rule_i in range(len(self.rules))}
         
+        # Rule index -> rule propensity
         self.rule_propensities = {str(i):0 for i in range(len(self.rules))}
     
     def updateGivenPropensity(self, rule_i, index_set_i, model_state_values):
         rule = self.rules[rule_i]
+
+        # Return the propensity of the subrule given by rule_i triggered with index_set_i, 
+        # and the current global model state values.
         new_propensity = rule.returnPropensity(np.take(self.locations, self.matched_indices[rule_i][index_set_i]), model_state_values)
+
+        # We use the subrule propensity diff to update the stored propensity in rule_propensities and total_propensity
+        propensity_diff = new_propensity - self.propensities[str(rule_i)].get(str(index_set_i), 0.0)
+
+        self.rule_propensities[str(rule_i)] += propensity_diff
+
         if self.use_cached_propensities:
-            propensity_diff = new_propensity - self.propensities[str(rule_i)].get(str(index_set_i), 0.0)
-            self.rule_propensities[str(rule_i)] += propensity_diff
             self.total_propensity += propensity_diff
         self.propensities[str(rule_i)][str(index_set_i)] = new_propensity
 
 
     def simulateOneStep(self, current_time):
+        # Update propensities for the rules affected by triggering the last_rule_index_set subrule.
+        # Save these in self.rule_propensities, self.propensities.
         self.performPropensityUpdates(self.updateGivenPropensity)
 
         total_propensity = self.returnTotalPropensity()
@@ -170,16 +182,21 @@ class HKOSolver(Solver):
         selected_rule = None
         selected_index_set = None
 
+        random_propensity = u1*total_propensity
+        # Find which rule to trigger based on u1
         for rule_i in range(len(self.rules)):
             rule_propensity = self.rule_propensities[str(rule_i)]
             cumulative_rule_prop += rule_propensity
-            if cumulative_rule_prop > u1*total_propensity:
-                cumulative_rule_prop -= rule_propensity
+            if cumulative_rule_prop > random_propensity:
+                # u1 lies between rule_i propensity interval
                 selected_rule = rule_i
+                # Start from the left hand side of rule_i's propensity interval
+                cumulative_rule_prop -= rule_propensity
                 selected_rule_propensity_dict = self.propensities[str(rule_i)]
+                # Find which subrule (i.e. which locations ("index set") triggered the rule)
                 for index_set_key in list(selected_rule_propensity_dict.keys()):
                     cumulative_rule_prop += selected_rule_propensity_dict[index_set_key]
-                    if cumulative_rule_prop > u1*total_propensity:
+                    if cumulative_rule_prop > random_propensity:
                         selected_index_set = int(index_set_key)
                         break
                 break
