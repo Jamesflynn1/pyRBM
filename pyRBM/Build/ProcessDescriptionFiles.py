@@ -19,7 +19,7 @@ def createMonthPropTerm(months:list):
 
     month_prefix = "model_month_"
     for month in months:
-        if not term_str == "(":
+        if term_str != "(":
             term_str += "+"
         term_str += f"{month_prefix}{month}"
     term_str += ")"
@@ -79,7 +79,7 @@ class CropStages:
             crop_info_dict = self.crop_info[crop]
             stages = self.crop_stages_dict[crop]
             for stage in stages:
-                if not stage in self.additional_classes:
+                if stage not in self.additional_classes:
                     current_class_string = f"{crop}_{stage}"
                     
                     info = self.crop_stage_info[current_class_string]
@@ -130,7 +130,7 @@ class CropStages:
     
     def returnCropClassData(self):
         crop_classes = [[f"{crop}_{stage}", self.crop_stage_info[f"{crop}_{stage}"]["Measurement Units"],"None"]
-                        for crop in list(self.crop_stages_dict.keys()) for stage in self.crop_stages_dict[crop]]
+                        for crop in self.crop_stages_dict for stage in self.crop_stages_dict[crop]]
         return crop_classes
 class CropRegions:
     def __init__(self, region_filepath:str, crop_stages:CropStages) -> None:

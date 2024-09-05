@@ -10,16 +10,23 @@ class SolverDataPlotting:
         assert(model.solver.debug)
         self.fig, self.ax = plt.subplots(2,2)
 
-        self.rule_names = [str(rule)for rule in list(model.matched_rules_dict.keys())]
-        self.rule_index_set_names = [f"{rule}_{index}"for rule in self.rule_names for index in range(len(model.matched_rules_dict[rule]))]
+        self.rule_names = [str(rule)for rule in model.matched_rules_dict]
+      
+        self.rule_index_set_names = [f"{rule}_{index}"
+                                     for rule in self.rule_names 
+                                     for index in range(len(model.matched_rules_dict[rule]))]
 
-        self.rule_plot = FrequencyBarChart(self.fig, self.ax[0][0], "Frequency of rule execution", "Rule Number", model.solver_diag_data, self.rule_names, "rule_triggered")
-        self.rule_index_plot = FrequencyBarChart(self.fig, self.ax[1][0], "Frequency of rule execution with given index set", "Rule-Index set", model.solver_diag_data, self.rule_index_set_names, "rule_index_set")
+        self.rule_plot = FrequencyBarChart(self.fig, self.ax[0][0],
+                                           "Frequency of rule execution", "Rule Number",
+                                           model.solver_diag_data, self.rule_names, "rule_triggered")
+        self.rule_index_plot = FrequencyBarChart(self.fig, self.ax[1][0],
+                                                 "Frequency of rule execution with given index set", "Rule-Index set",
+                                                 model.solver_diag_data, self.rule_index_set_names, "rule_index_set")
 
         plt.show(block=False)
 
 class FrequencyBarChart:
-      def __init__(self, fig, plot, title:str, x_label_str:str, solver_data, x_labels:list, data_key:str, rerender_all = True):
+      def __init__(self, fig, plot, title:str, x_label_str:str, solver_data, x_labels:list, data_key:str, rerender_all:bool = True):
         self.display = plot
         self.fig = fig
         self.display.title.set_text(title)

@@ -1,78 +1,87 @@
-import pyRBM.Build.Classes as Classes
-import pyRBM.Build.Locations as Locations
-import pyRBM.Build.Rules as Rules
-import pyRBM.Build.RuleMatching as RuleMatching
-import pyRBM.Build.Utils as Utils
-
-import pyRBM.Core.Cache as Files
-import pyRBM.Core.Plotting as Plot
-
-import pyRBM.Simulation.State as State
-import pyRBM.Simulation.Solvers as Solvers
-import pyRBM.Simulation.RuleChain as RuleChain
-import pyRBM.Simulation.Trajectory as Trajectory
-
-
 import time
 import datetime
-import collections
+from collections import defaultdict
+from typing import Any, Iterable, Callable, Union, Optional
 
-import matplotlib.pyplot as plt
-import matplotlib.animation as anim
 import numpy as np
 
+from pyRBM.Build.Classes import Classes
+from pyRBM.Build.Locations import Locations, Location, returnDefaultLocation
+from pyRBM.Build.Rules import Rules, Rule
+from pyRBM.Build.RuleMatching import returnMatchedRulesDict
+from pyRBM.Build.Utils import createEuclideanDistanceMatrix
+
+from pyRBM.Core.Cache import (writeDictToJSON, loadClasses,
+                              loadLocations, loadMatchedRules)
+from pyRBM.Core.Plotting import SolverDataPlotting
+
+from pyRBM.Simulation.State import ModelState
+from pyRBM.Simulation.Solvers import Solver
+from pyRBM.Simulation.RuleChain import returnOneStepRuleUpdates
+from pyRBM.Simulation.Trajectory import Trajectory
+
+
+
 class Model:
-    def __init__(self, model_name:str):
-        self.builtin_classes = True
+    def __init__(self, model_name:str) -> None:
+        self.contains_builtin_classes = True
         self.model_name = model_name
+        self.defined_classes:Optional[list[str]] = None
 
         
-    def createLocations(self):
-        all_locations = Locations.Locations(self.defined_classes, self.distance_func)
-        locations = None
+    def createLocations(self) -> dict[str, dict[str, Any]]:
+        all_locations = Locations(self.defined_classes, self.distance_func)
+        locations_list = None
         if not self.create_locations_func is None:
-            locations = self.create_locations_func()
+            locations_list = self.create_locations_func()
             self.no_location_model = False
         else:
-            locations = [Locations.returnDefaultLocation(self.classes_defintions)]
+            locations_list = [returnDefaultLocation(self.classes_defintions)]
             print("No locations passed to model constructor.",
             "Creating dummy location: Default, with type: any ","Will disregard rule type restrictions.")
             self.no_location_model = True
-        all_locations.addLocations(locations)
+        all_locations.addLocations(locations_list)
         # Distance computation done as part of writeJSON - set as location constants
-        locations = all_locations.returnLocationsDict()
+        locations_dict = all_locations.returnLocationsDict()
         self.location_constants = all_locations.returnAllLocationConstantNames()
 
-        return locations
+        return locations_dict
 
-    def createRules(self):
+    def createRules(self) -> dict[str, dict[str, Any]]:
         # Use np.identity(len()) .... for no change
-        all_rules = Rules.Rules(self.defined_classes, self.location_constants)
+        all_rules = Rules(self.defined_classes, self.location_constants)
         rules = self.create_rules_func()
         all_rules.addRules(rules)
         if self.no_location_model:
             all_rules.removeTypeRequirement()
         return all_rules.returnMetaRuleDict()
 
-    def defineClasses(self):
-        classes = Classes.Classes(self.builtin_classes)
+    def defineClasses(self) -> dict[str,dict[str,str]]:
+        classes = Classes(self.contains_builtin_classes)
         for class_info in self.classes_defintions:
             classes.addClass(*class_info)
         classes_dict = classes.returnClassDict()
-        self.defined_classes = classes_dict.keys()
+        self.defined_classes = list(classes_dict.keys())
 
         return classes_dict
 
-    def matchRules(self, rules):
+    def matchRules(self, rules:dict[str,dict[str,Any]]) -> dict[str, dict[str, Any]]:
         additional_classes = []
-        if self.builtin_classes:
-            additional_classes = Classes.Classes().returnBuiltInClasses()
-        return RuleMatching.returnMatchedRulesDict(rules, self.locations_dict, additional_classes)
+        if self.contains_builtin_classes:
+            additional_classes = Classes().returnBuiltInClasses()
+        return returnMatchedRulesDict(rules, self.locations_dict, additional_classes)
     
     
-    def buildModel(self, classes_defintions, create_rules, create_locations = None, distance_func = Utils.createEuclideanDistanceMatrix,
-                   write_to_file = False,  save_model_folder:str = "/ModelFiles/", location_filename:str = "Locations", matched_rules_filename:str = "LocationMatchedRules",
-                   classes_filename:str = "Classes", save_meta_rules = False, metarule_filename:str = "MetaRules"):
+    def buildModel(self, classes_defintions:Iterable[Iterable[str]],
+                   create_rules:Callable[[], Iterable[Rule]],
+                   create_locations:Optional[Callable[[], Iterable[Location]]] = None,
+                   distance_func = createEuclideanDistanceMatrix,
+                   write_to_file:bool = False, save_meta_rules:bool = False,
+                   save_model_folder:str = "/ModelFiles/",
+                   location_filename:str = "Locations",
+                   matched_rules_filename:str = "LocationMatchedRules",
+                   classes_filename:str = "Classes",
+                   metarule_filename:str = "MetaRules") -> None:
         
         self.classes_defintions = classes_defintions
         self.create_locations_func = create_locations
@@ -104,88 +113,99 @@ class Model:
                 files_to_write.append((self.locations_dict, file_prefix+location_filename, "locations dict"))
 
 
-            self.save_model_folder,self.location_filename,self.matched_rules_filename,self.classes_filename,self.metarule_filename = [save_model_folder,location_filename,
-                                                                                                                                      matched_rules_filename,classes_filename,metarule_filename]
+            self.save_model_folder,self.location_filename,self.matched_rules_filename,\
+                self.classes_filename,self.metarule_filename = [save_model_folder,location_filename,
+                                                                matched_rules_filename,classes_filename,
+                                                                metarule_filename]
+            
             for model_dict, file_loc, dict_name in files_to_write:
-                Files.writeDictToJSON(model_dict, file_loc, dict_name)
+                writeDictToJSON(model_dict, file_loc, dict_name)
         else:
             if save_meta_rules:
                 print("Warning: meta rules not saved as file saving is false")
             else:
-                self.save_model_folder,self.location_filename,self.matched_rules_filename,self.classes_filename,self.metarule_filename = [None,None,None,None,None]
+                self.save_model_folder,self.location_filename,self.matched_rules_filename,\
+                    self.classes_filename,self.metarule_filename = [None,None,None,None,None]
 
         self.convertToSimulation()
 
-    def convertToSimulation(self):
-        self.classes, self.builtin_classes = Files.loadClasses(classes_dict=self.classes_dict)
-        self.locations = Files.loadLocations(build_locations_dict=self.locations_dict)
-        self.rules, self.matched_indices = Files.loadMatchedRules(self.locations, num_builtin_classes=len(self.builtin_classes),
-                                                                  matched_rule_dict=self.matched_rules_dict)
+    def convertToSimulation(self) -> None:
+        self.classes, self.builtin_classes = loadClasses(classes_dict=self.classes_dict)
+        self.locations = loadLocations(build_locations_dict=self.locations_dict)
+        self.rules, self.matched_indices = loadMatchedRules(self.locations,
+                                                            num_builtin_classes=len(self.builtin_classes),
+                                                            matched_rule_dict=self.matched_rules_dict)
 
 
-        self.trajectory = Trajectory.Trajectory(self.locations)
-        self.model_state = State.ModelState(self.builtin_classes, datetime.datetime.now())
+        self.trajectory = Trajectory(self.locations)
+        self.model_state = ModelState(self.builtin_classes, datetime.datetime.now())
 
         self.model_initialized = True
         self.solver_initialized = False
 
     def loadModelFromJSONFiles(self, location_filename:str = "Locations", matched_rules_filename:str = "LocationMatchedRules",
-                           classes_filename:str = "Classes", model_folder:str = "Backend/ModelFiles/"):
+                           classes_filename:str = "Classes", model_folder:str = "Backend/ModelFiles/") -> None:
         
         self.matched_rules_filename = matched_rules_filename
         self.location_filename = location_filename
         self.save_model_folder = model_folder
         self.classes_filename = classes_filename
 
-        self.classes, self.builtin_classes = Files.loadClasses(classes_filename = f"{self.save_model_folder}{self.model_name}/{self.classes_filename}")
+        self.classes, self.builtin_classes = loadClasses(classes_filename = f"{self.save_model_folder}{self.model_name}/{self.classes_filename}")
         if location_filename is None:
-            self.locations = Files.loadLocations(build_locations_dict=Locations.returnDefaultLocation(self.classes))
+            self.locations = loadLocations(build_locations_dict=returnDefaultLocation(self.classes))
         else:
-            self.locations = Files.loadLocations(locations_filename = f"{self.save_model_folder}{self.model_name}/{self.location_filename}")
-        self.rules, self.matched_indices = Files.loadMatchedRules(self.locations, num_builtin_classes=len(self.builtin_classes), 
+            self.locations = loadLocations(locations_filename = f"{self.save_model_folder}{self.model_name}/{self.location_filename}")
+        self.rules, self.matched_indices = loadMatchedRules(self.locations, num_builtin_classes=len(self.builtin_classes),
                                                                   matched_rules_filename= f"{self.save_model_folder}{self.model_name}/{self.matched_rules_filename}")
 
 
-        self.trajectory = Trajectory.Trajectory(self.locations)
-        self.model_state = State.ModelState(self.builtin_classes, datetime.now())
+        self.trajectory = Trajectory(self.locations)
+        self.model_state = ModelState(self.builtin_classes, datetime.datetime.now())
 
         self.solver_initialized = False
         self.model_initialized = True
 
-    def initializeSolver(self, solver:Solvers.Solver):
+    def initializeSolver(self, solver:Solver) -> None:
         if self.model_initialized:
             if solver.use_cached_propensities:
-                self.rule_propensity_update_dict = RuleChain.returnOneStepRuleUpdates(self.rules, self.locations, self.matched_indices, self.model_state.returnModelClasses())
+                self.rule_propensity_update_dict = returnOneStepRuleUpdates(self.rules, self.locations,
+                                                                            self.matched_indices,
+                                                                            self.model_state.returnModelClasses())
             else:
                 self.rule_propensity_update_dict = {}
 
 
-            self.simulation_elapsed_times = []
-            self.simulation_iterations = []
+            self.simulation_elapsed_times:list[float] = []
+            self.simulation_iterations:list[int] = []
             self.simulation_number = 0
 
             self.solver = solver
-            self.solver.initialize(self.locations, self.rules, self.matched_indices, self.model_state, self.rule_propensity_update_dict)
+            self.solver.initialize(self.locations, self.rules, self.matched_indices, self.model_state,
+                                   self.rule_propensity_update_dict)
             self.solver_initialized = True
 
             self.debug = solver.debug
             if self.debug:
-                self.prior_iterations_data = collections.defaultdict(list)
+                self.prior_iterations_data = defaultdict(list)
                 # Remove manual change required for new solver data collection fields here
-                self.solver_diag_data = SolverData(fields=["rule_triggered", "rule_index_set", "total_propensity"])
-                self.model_debug_plot = Plot.SolverDataPlotting(self)
+                self.solver_diag_data = SolverData(fields=["rule_triggered",
+                                                           "rule_index_set",
+                                                           "total_propensity"])
+                self.model_debug_plot = SolverDataPlotting(self)
         else:
             raise(ValueError("Model not initialized: initialize model before solver"))
 
-    def resetSimulation(self):
+    def resetSimulation(self) -> None:
         for location in self.locations:
             location.reset()
         # Trajectory uses current location values so needs to be defined after location values reset.
-        self.trajectory = Trajectory.Trajectory(self.locations)
+        self.trajectory = Trajectory(self.locations)
         self.model_state.reset()
         self.solver.reset()
 
-    def simulate(self, start_date, time_limit, max_iterations:int = 10000):
+    def simulate(self, start_date:Union[datetime.time, datetime.date, datetime.datetime],
+                 time_limit:Union[int, float], max_iterations:int = 10000) -> Trajectory:
         self.simulation_number += 1
         self.start_date = start_date
         self.model_state.changeDate(self.start_date)
@@ -218,25 +238,25 @@ class Model:
         else:
             raise(ValueError("Model/solver not initialized: initialize model before the solver."))
 
-    def printSimulationPerformanceStats(self):
+    def printSimulationPerformanceStats(self) -> None:
         print("\n")
         print(f"Completed {self.simulation_number} simulations with the following stats")
         print(f"Iterations:\n Mean: {np.mean(self.simulation_iterations)}, Std: {np.std(self.simulation_iterations)}")
         print(f"Simulation Elapsed Time:\n Mean: {np.mean(self.simulation_elapsed_times)}, Std: {np.std(self.simulation_elapsed_times)}")
 
 class SolverData:
-    def __init__(self, fields):
+    def __init__(self, fields:Iterable[str]) -> None:
         self.fields = fields
-        self.iterations_data =  [collections.defaultdict(list)]
-        self.iterations_frequency = [{field:collections.defaultdict(int) for field in fields}]
+        self.iterations_data:list[dict[list,Any]] =  [defaultdict(list)]
+        self.iterations_frequency:list[dict[str, defaultdict[str, int]]] = [{field:defaultdict(int) for field in fields}]
 
-    def updateData(self, update_dict):
+    def updateData(self, update_dict) -> None:
         iteration_data = self.iterations_data[-1]
         iteration_frequency = self.iterations_frequency[-1]
         for key, value in update_dict.items():
             iteration_frequency[key][value] += 1
             iteration_data[key].append(value)
 
-    def saveSolverPerSimulationData(self):
-        self.iterations_data.append(collections.defaultdict(list))
-        self.iterations_frequency.append({field:collections.defaultdict(int) for field in self.fields})
+    def saveSolverPerSimulationData(self) -> None:
+        self.iterations_data.append(defaultdict(list))
+        self.iterations_frequency.append({field:defaultdict(int) for field in self.fields})

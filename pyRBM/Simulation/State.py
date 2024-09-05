@@ -4,12 +4,15 @@ from datetime import timedelta, datetime
 import numpy as np
 
 class ModelState:
-    def __init__(self, model_classes, start_datetime):
-        self.MONTHS =  ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sept", "oct", "nov", "dec"]
+    def __init__(self, model_classes, start_datetime) -> None:
+        self.MONTHS =  ["jan", "feb", "mar", "apr", "may", "jun",
+                        "jul", "aug", "sept", "oct", "nov", "dec"]
         self.model_prefix = "model_"
 
-        self.IMPLEMENTED_MODEL_CLASSES = [f"model_{var}" for var in ["day", "hour", "months"]]
-        self.IMPLEMENTED_MODEL_CLASSES += [f"model_month_{month}" for month in self.MONTHS]
+        self.IMPLEMENTED_MODEL_CLASSES = [f"model_{var}"
+                                          for var in ["day", "hour", "months"]]
+        self.IMPLEMENTED_MODEL_CLASSES += [f"model_month_{month}"
+                                           for month in self.MONTHS]
         self.model_classes = {}
 
         self.time_measurement = "days"
@@ -26,7 +29,7 @@ class ModelState:
         self.iterations = 0
         self.current_month = None
 
-        self.changed_vars = [classes for classes in list(self.model_classes.keys())]
+        self.changed_vars = [classes for classes in self.model_classes]
 
 
         if isinstance(start_datetime, datetime):
@@ -36,26 +39,26 @@ class ModelState:
             raise(ValueError(f"Start date must be of type datetime not {type(start_datetime)}"))
         self._initaliseCalendarInfo()
         
-    def reset(self):
+    def reset(self) -> None:
         self.elapsed_time = 0
         self.iterations = 0
         self.current_datetime = self.start_datetime
-        self.changed_vars = [classes for classes in list(self.model_classes.keys())]
+        self.changed_vars = [classes for classes in self.model_classes]
         self._updateCalendarInfo()
 
     # Convert the self.current_datetime into model variables used
-    def _initaliseCalendarInfo(self):
+    def _initaliseCalendarInfo(self) -> None:
         # Initialise all indicators to zero and perform the standard update step.
         for key in self.IMPLEMENTED_MODEL_CLASSES:
             self.model_classes[key] = 0
         self._updateCalendarInfo()
     
     
-    def changeDate(self, new_date):
+    def changeDate(self, new_date) -> None:
         self.start_datetime = new_date
         self.reset()
 
-    def _updateCalendarInfo(self):
+    def _updateCalendarInfo(self) -> None:
 
         # https://docs.python.org/3/library/datetime.html#datetime.datetime.timetuple
         current_datetime_info = self.current_datetime.timetuple()
@@ -89,7 +92,7 @@ class ModelState:
             self.changed_vars.append(f"{self.model_prefix}hour")
 
 
-    def processUpdate(self, new_time):
+    def processUpdate(self, new_time) -> None:
         self.changed_vars = []
         if new_time == None:
             print("Ending model simulation")
@@ -97,7 +100,7 @@ class ModelState:
         self._updateTime(new_time)
         self.iterations += 1
 
-    def _updateTime(self, new_time):
+    def _updateTime(self, new_time) -> None:
         time_change = None
         time_diff = new_time - self.elapsed_time
         if self.time_measurement == "hours":
@@ -112,11 +115,11 @@ class ModelState:
 
         self._updateCalendarInfo()
         
-    def returnModelClassesValues(self):
+    def returnModelClassesValues(self) :
         return self.model_classes.values()
     
     def returnModelClasses(self):
         return list(self.model_classes.values())
                     
-    def returnChangedVars(self):
+    def returnChangedVars(self) -> list[str]:
         return self.changed_vars
