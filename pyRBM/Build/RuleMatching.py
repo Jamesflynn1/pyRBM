@@ -1,9 +1,10 @@
 """ Generic framework to match metarules to locations, find all location indices that match and rewrite the propensities and stoichiometries to use array indices.
 """
+from typing import Any
 
 import numpy as np
 
-def isSubtypeOf(parent_type, child_type):
+def isSubtypeOf(parent_type:str, child_type:str) -> bool:
     """ Indicates whether the "child_type" rule type is a subtype of the parent_type.
     
     Current returns parent_type == child_type.
@@ -13,20 +14,22 @@ def isSubtypeOf(parent_type, child_type):
     # Equality for the moment
     return parent_type == child_type
 
-def returnRuleMatchingIndices(rules, locations):
+def returnRuleMatchingIndices(rules:dict[str,dict[str,Any]],
+                              locations:dict[str,dict[str,Any]]) -> dict[str, list[int]]:
     # For each rule, on each type that matches a general type
-    filled_rules = {str(i):[] for i in range(len(rules))}
+    filled_rules:dict[str, list[int]] = {str(i):[] for i in range(len(rules))}
     for rule_i in range(len(rules)):
         rule = rules[str(rule_i)]
-        matchedTypeToIndices = {i:[] for i in range(len(rule["target_types"]))}
+        matched_type_to_indices = {i:[] for i in range(len(rule["target_types"]))}
         # Check all locations to see which locations correspond to which required types by the rule.
         # (note, a rule may correspond to multiple required types but it can only be used in one slot).
 
         # We obtain a dictionary mapping each required location type to a list of fufilling indices in our location set.
         for location_i in range(len(locations)):
             for rule_targets_i in range(len(rule["target_types"])):
-                if isSubtypeOf(rule["target_types"][rule_targets_i], locations[str(location_i)]["type"]):
-                    matchedTypeToIndices[rule_targets_i].append(location_i)
+                if isSubtypeOf(rule["target_types"][rule_targets_i],
+                               locations[str(location_i)]["type"]):
+                    matched_type_to_indices[rule_targets_i].append(location_i)
         # From the previously described location set, obtain a tuple of indices (if it exists) that satisfies the rule.
         # Do this iteratively, loop over all index sets in construction and add the new index if it isn't already inside.
         #print(f"MATCHED {matchedTypeToIndices}")
@@ -34,10 +37,10 @@ def returnRuleMatchingIndices(rules, locations):
         for rule_targets_i in range(len(rule["target_types"])):
             atleast_one_satisifying = False
             if len(rule_indices) == 0:
-                if len(matchedTypeToIndices[0])>0:
-                    for mtti in matchedTypeToIndices[0]:
+                if len(matched_type_to_indices[0])>0:
+                    for mtti in matched_type_to_indices[0]:
                         location = locations[str(location_i)]
-                        if not location["type"] in  rule_indices.keys():
+                        if not location["type"] in  rule_indices:
                              rule_indices[location["type"]] = []
                         rule_indices[location["type"]].append([mtti])
                     atleast_one_satisifying = True
@@ -45,13 +48,12 @@ def returnRuleMatchingIndices(rules, locations):
                 # Every index that can be subbed in at that place.
                 # We keep a dictionary here so we can map explict types.
                 correct_length_rules = {}
-                for loc_index in matchedTypeToIndices[rule_targets_i]:
-                    rule_keys = list(rule_indices.keys())
+                for loc_index in matched_type_to_indices[rule_targets_i]:
                     # Which explict types are being used.
-                    for rule_key in rule_keys:
-                        for index_matching in rule_indices[rule_key]:
-                            if not loc_index in index_matching:
-                                if not rule_key+"_"+locations[loc_index]["type"] in list(correct_length_rules.keys()):
+                    for rule_key, index_matches in rule_indices.items():
+                        for index_matching in index_matches:
+                            if loc_index not in index_matching:
+                                if rule_key+"_"+locations[loc_index]["type"] not in correct_length_rules:
                                     correct_length_rules[rule_key+"_"+locations[loc_index]["type"]] = [index_matching+[loc_index]]
                                 else:
                                     correct_length_rules[rule_key+"_"+locations[loc_index]["type"]].append(index_matching+[loc_index])
@@ -71,7 +73,7 @@ def returnRuleMatchingIndices(rules, locations):
 
 # Return the final propensity for a given rule provided concrete locations. 
 # Assumption that locations of the same type have the same compartments.
-def obtainPropensity(rule, locations, builtin_classes):
+def obtainPropensity(rule:dict[str,Any], locations:list[dict[str,Any]], builtin_classes:list[list[str]]) -> list[str]:
     propensities = rule["propensities"]
     new_propensities = []
     for location_i, location in enumerate(locations):
@@ -82,21 +84,24 @@ def obtainPropensity(rule, locations, builtin_classes):
             new_propensity = new_propensity.replace(builtin_class[0], f"x{built_in_i+len(new_label_mapping)}")
             
 
-        for label_i in list(new_label_mapping.keys()):
+        for label_i in new_label_mapping:
             new_propensity = new_propensity.replace(new_label_mapping[label_i], f"x{label_i}")
         # Add the built in class at the end of the location classes
 
         new_propensities.append(new_propensity)
     return new_propensities
 
-def obtainStochiometry(rule, locations):
+def obtainStochiometry(rule:dict[str,Any], locations:list[dict[str,Any]]) -> list[list[np.float64]]:
     """ Remaps the rule to fit the class size found in each location
     
-    Example: Original Rule mapping {0:"Class1", 1:"Class2"} (size of input to Stochiometry and Propensity functions: 2)
-    Location and Fitted Rule mapping {0:"ClassA", 1:"Class1", 2:"ClassB", 3:"Class2"}  (size of input to Stochiometry and Propensity functions: 4)
+    Example: Original Rule mapping {0:"Class1", 1:"Class2"} 
+    (size of input to Stochiometry and Propensity functions: 2)
+
+    Location and Fitted Rule mapping {0:"ClassA", 1:"Class1", 2:"ClassB", 3:"Class2"} 
+    (size of input to Stochiometry and Propensity functions: 4)
 
 
-    Parameters:
+    Args:
         - rule: the Rule that we are remapping the propensity and stochiometry to fit each location.
         - locations: location instances (a list the length of rule.types) that fit each of the rule.types.
 
@@ -116,7 +121,8 @@ def obtainStochiometry(rule, locations):
         for rule_class_index in range(len(current_class_mapping[rule_location])):
             class_found = False
             for location_class_index in range(len(new_label_mapping)):
-                if current_class_mapping[rule_location][rule_class_index] == new_label_mapping[str(location_class_index)]:
+                if (current_class_mapping[rule_location][rule_class_index] ==
+                    new_label_mapping[str(location_class_index)]):
                     new_stoichiometry[location_class_index] = stoichiometries[rule_location][rule_class_index]
                     # Only needs to happen once so can be placed here, possibly refactor
                     class_found = True
@@ -126,7 +132,8 @@ def obtainStochiometry(rule, locations):
         
     return new_stoichiometries
 
-def returnMatchedRulesDict(rules, locations, builtin_classes):
+def returnMatchedRulesDict(rules:dict[str,dict[str,Any]], locations:dict[str,dict[str,Any]],
+                           builtin_classes:list[list[str]]) -> dict[str, dict[str,Any]]:
     matched_rules = returnRuleMatchingIndices(rules, locations)
     builtin_classes = sorted(builtin_classes)
     concrete_match_rules_dict = {}
@@ -134,19 +141,20 @@ def returnMatchedRulesDict(rules, locations, builtin_classes):
     for rule_i in range(len(matched_rules)):
         rule = rules[str(rule_i)]
         matched_rule = matched_rules[str(rule_i)]
-        concrete_rule_types = list(matched_rule.keys())
-        for concrete_rule_type in concrete_rule_types:
+        for concrete_rule_type in matched_rule:
             concrete_rule_dict = {"rule_num":rule_i, "rule_name":rule["name"],
-                                  "rule_location_types":concrete_rule_type, "matching_indices":matched_rule[concrete_rule_type]}
+                                  "rule_location_types":concrete_rule_type,
+                                  "matching_indices":matched_rule[concrete_rule_type]}
             # Assume all locations have the same classes - will be asserted in later versions.
-            example_locations = []
+            example_locations:list[dict[str,Any]] = []
             # Take the first set as an example
             for location_index in matched_rule[concrete_rule_type][0]:
                 example_locations.append(locations[str(location_index)])
             
             # TODO ensure compatibility with further propensity functions
             concrete_rule_dict["stoichiomety"] = obtainStochiometry(rule, example_locations)
-            concrete_rule_dict["propensity"] = obtainPropensity(rule, example_locations, builtin_classes)
+            concrete_rule_dict["propensity"] = obtainPropensity(rule, example_locations,
+                                                                builtin_classes)
             concrete_match_rules_dict[str(concrete_rules)] = concrete_rule_dict
             concrete_rules+= 1
 

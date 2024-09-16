@@ -1,38 +1,50 @@
+""" Defines a Rule class and a Rules helper class
+"""
+
+from typing import Iterable, Any, Union, Optional, Sequence
+
 import numpy as np
 import sympy
 
-def isNonDefaultTargetArray(target_array):
+def isNonDefaultTargetArray(target_array:list[str]) -> bool:
+    """ Checks if the provided target_array contains any non default (i.e. non None or "Any"/"any") target requirmments.
+    Returns:
+        bool: True if any none default target requirment in `target_array`, False otherwise.
+    """
     for x in target_array:
         if not (x is None or x == "any" or x == "Any"):
             return True
     return False
 
-def returnSympyClassVarsDict(classes):
+def returnSympyClassVarsDict(classes:Iterable[str]) -> dict[str, sympy.Symbol]:
     symbols_str = ""
     for class_label in classes:
         symbols_str += class_label+" "
     symbols = sympy.symbols(symbols_str)
     if not isinstance(symbols, (list, tuple)):
         symbols = [symbols]
-    symbols_dict = {class_label:symbols[index] for index, class_label in enumerate(classes)}
+    symbols_dict = {class_label:symbols[index] 
+                    for index, class_label in enumerate(classes)}
     return symbols_dict
 
 
 class Rule:
-    def __init__(self, rule_name:str, targets:list):
-
+    def __init__(self, rule_name:str, targets:Sequence[str]) -> None:
+        """ 
+        """
         self.rule_name = rule_name
 
         self.targets = targets
         # Stochiometries/propensities are with respect
-        self.stoichiometies = {i:None for i in range(len(targets))}
-        self.propensities = {i:None for i in range(len(targets))}
+        target_indices = range(len(targets))
+        
+        self.stoichiometies:        dict[int, Optional[Any]] = {i:None for i in target_indices}
+        self.propensities:          dict[int, Optional[Any]] = {i:None for i in target_indices}
+        self.stoichiometry_classes: dict[int, Optional[list[str]]] = {i:None for i in target_indices}
+        self.propensity_classes:    dict[int, Optional[list[str]]] = {i:None for i in target_indices}
 
-        self.rule_classes = {i:None for i in range(len(targets))}
-        self.stoichiometry_classes = {i:None for i in range(len(targets))}
-        self.propensity_classes = {i:None for i in range(len(targets))}
-
-    def addLinearStoichiomety(self, target_indices, stoichiometies, required_target_classes):
+    def addLinearStoichiomety(self, target_indices:list[int], stoichiometies,
+                              required_target_classes:list[list[str]]) -> None:
         assert(len(target_indices) == len(stoichiometies))
         for i, index in enumerate(target_indices):
             stoichiometry = stoichiometies[i]
@@ -44,7 +56,8 @@ class Rule:
             else:
                 raise(ValueError(f"Unrecognised stoichiomety of type {type(stoichiometies[i])}, for target index {index}"))
     
-    def addSimplePropensityFunction(self, target_indices, values, required_target_classes):
+    def addSimplePropensityFunction(self, target_indices:list[int], values,
+                                    required_target_classes:list[list[str]]) -> None:
         # Accepts matrix or constant values at the moment
         assert(len(target_indices) == len(values))
         for i, index in enumerate(target_indices):
@@ -58,25 +71,39 @@ class Rule:
             self.propensity_classes[index] = required_target_classes[i]
             self.propensities[index] = value
 
-    def validateFormula(self, formula, class_symbols, safe_num = 1):
+    def validateFormula(self, formula, class_symbols:dict[str, sympy.Symbol],
+                        safe_num:Union[float, int] = 1) -> bool:
         # Evaluate when all classes are 0
         subsitution_dict = {}
-        for class_str in list(class_symbols.keys()):
-            subsitution_dict[class_symbols[class_str]] = safe_num
+        for class_symbol in class_symbols.values():
+            subsitution_dict[class_symbol] = safe_num
         res = formula.evalf(subs=subsitution_dict)
         # We require that a numerical result is outputted and no symbols are left over.
         assert(isinstance(res, (sympy.core.numbers.Float, sympy.core.numbers.Zero)))
         return True
 
-    def checkRuleDefinition(self, builtin_class_symbols, locations_constant_symbols):
+    def checkRuleDefinition(self, builtin_class_symbols:dict[str, sympy.Symbol],
+                            locations_constant_symbols:dict[str, sympy.Symbol]) -> None:
+        """ Perform the following validation on the rule definition:
+            1. self.stoichiometies, self.propensities, self.propensity_classes are of the same length as the rule targets.
+            2. each element of self.stoichiometies, self.propensities, self.propensity_classes are not None.
+            3. each propensity at index i, in self.propensities, evaluates to a number when the builtin_class_symbols, locations_constant_symbols and the propensity_classes[i] symbols are evaluated 
+                as 1 (i.e. the propensity is a valid numerical formula).
+        Args:
+            builtin_class_symbols :
+            locations_constant_symbols :
+        """
+        for rule_arrays in (self.stoichiometies, self.propensities, self.propensity_classes, self.stoichiometry_classes):
+            assert(len(rule_arrays) == len(self.targets))
+        
         for i in range(len(self.targets)):
             if self.stoichiometies[i] is None:
                 raise(ValueError(f"Incorrect rule definition for {self.rule_name}\nThe Location type {self.targets[i]} at rule position {str(i+1)} has no defined stochiometry."))
-            elif self.propensities[i] is None:
+            elif self.propensities[i] is None or not isinstance(self.propensities[i], str):
                 raise(ValueError(f"Incorrect rule definition for {self.rule_name}\nThe Location type {self.targets[i]} at rule position {str(i+1)} has no defined propensity."))
-            elif self.propensity_classes[i] is None:
+            elif self.propensity_classes[i] is None or not isinstance(self.propensity_classes[i], list):
                 raise(ValueError(f"Incorrect rule definition for {self.rule_name}\nThe Location type {self.targets[i]} at rule position {str(i+1)} has no defined propensity class requirement."))
-            elif self.stoichiometry_classes[i] is None:
+            elif self.stoichiometry_classes[i] is None or not isinstance(self.propensity_classes[i], list):
                 raise(ValueError(f"Incorrect rule definition for {self.rule_name}\nThe Location type {self.targets[i]} at rule position {str(i+1)} has no defined stochiometry class requirement."))
             
         for index in range(len(self.propensities)):
@@ -84,12 +111,14 @@ class Rule:
             sympy_formula = sympy.parse_expr(self.propensities[index], local_dict=symbols)
             self.validateFormula(sympy_formula, symbols)
             
-    def _mergeClassLists(self):
+    def _mergeClassLists(self) -> None:
+        """
+        """
         # Maps new index to class label
         self.rule_classes = []
-        for i, target in enumerate(self.targets):
+        for i, _ in enumerate(self.targets):
             sorted_classes = sorted(set(self.propensity_classes[i] + self.stoichiometry_classes[i]))
-            tmp_rule_class_dict = {i:comp_class for i, comp_class in enumerate(sorted_classes)}
+            tmp_rule_class_dict = dict(enumerate(sorted_classes))
             # Might be better to remap inputs for more complex functions rather than directly changing the definition of the function.
                 # Use additive identity here
             new_stoichiometry = np.zeros(len(sorted_classes))
@@ -100,19 +129,20 @@ class Rule:
             self.stoichiometies[i] = list(new_stoichiometry)
             self.rule_classes.append(tmp_rule_class_dict)
         
-    def returnRuleDict(self):
+    def returnRuleDict(self) -> dict[str,Any]:
         # Check performed in Rules class
         # self.checkRuleDefinition(builtin_class_symbols, locations_constants)
         self._mergeClassLists()
-
-        # UNPACK DEF TO SPECIFIC LOCATION
-        rule_dict = {"name":self.rule_name, "target_types":self.targets, "required_classes":self.rule_classes,
-                     "stoichiometries":self.stoichiometies, "propensities":self.propensities}
-        return rule_dict
+        return {"name":self.rule_name,
+                "target_types":self.targets,
+                "required_classes":self.rule_classes,
+                "stoichiometries":self.stoichiometies,
+                "propensities":self.propensities
+                }
 
 class Rules:
-    def __init__(self, defined_classes, location_constants : list):
-        self.rules = []
+    def __init__(self, defined_classes:Iterable[str], location_constants: Iterable[str]) -> None:
+        self.rules:list[Rule] = []
         self.defined_classes = defined_classes
         self.model_prefix = "model_"
         self.location_prefix = "loc_"
@@ -128,28 +158,32 @@ class Rules:
         # DOESN'T CHECK FOR EXISTENCE OF CONSTANTS FOR EACH LOCATION - THIS IS DONE IN THE RULE MATCHING
         self.location_constants_symbols = returnSympyClassVarsDict(location_constants)
     
-    def removeTypeRequirement(self, default_type = "any"):
+    def removeTypeRequirement(self, default_type:str = "any") -> None:
+        """ Used to remove the user set (or unset) type requirements for all rules by setting to the default_type. Used for no-compartment models.
+        Should not be used for any multi-compartmental models.
+        """
         for rule in self.rules:
             if len(rule.targets) >= 2:
                 raise(ValueError(f"ERROR: rule {rule.rule_name} has {len(rule.targets)} location targets for a locationless model (requires len(targets == 1))"))
             elif isNonDefaultTargetArray(rule.targets):
                 print(f"Warning: rule {rule.rule_name} has non default (i.e not all elements are None or 'any') target list {rule.targets}")
-                print(f"Ignoring type restrictions for no location models.")
+                print("Ignoring type restrictions for no location models.")
             rule.targets = [default_type for _ in range(len(rule.targets))]
 
-    def addRule(self, rule:Rule):
+    def addRule(self, rule:Rule) -> None:
         if isinstance(rule, Rule):
             self.rules.append(rule)
         else:
             raise(TypeError(f"rule is not a child type of Rule base class (type: {type(rule)})"))
         
-    def addRules(self, rules):
+    def addRules(self, rules:Iterable[Rule]) -> None:
         for rule in rules:
             self.addRule(rule)
     
-    def _checkRules(self):
+    def _checkRules(self) -> bool:
         for rule in self.rules:
-            rule.checkRuleDefinition(self.builtin_symbols, self.location_constants_symbols)
+            rule.checkRuleDefinition(self.builtin_symbols,
+                                     self.location_constants_symbols)
 
             for propensity_class_index in range(len(rule.propensity_classes)):
                 location_propensity_class = rule.propensity_classes[propensity_class_index]
@@ -164,6 +198,7 @@ class Rules:
                         raise ValueError(f"Class required for the stoichiometry, {loc_stoich_class} not defined (Rule name: {rule.rule_name})")
         return True
 
-    def returnMetaRuleDict(self):
+    def returnMetaRuleDict(self) -> dict[str,dict[str,Any]]:
         self._checkRules()
-        return {str(i):rule.returnRuleDict() for i, rule in enumerate(self.rules)}
+        return {str(i):rule.returnRuleDict()
+                for i, rule in enumerate(self.rules)}

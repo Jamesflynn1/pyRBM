@@ -1,9 +1,11 @@
+from typing import Union, Sequence, Any
 import numpy as np
 from math import radians, cos, sin, asin, sqrt
 
 # Credit to https://stackoverflow.com/questions/29545704/fast-haversine-approximation-python-pandas
 
-def haversine(lon1, lat1, lon2, lat2):
+def haversine(lon1:Union[float, int], lat1:Union[float, int],
+              lon2:Union[float, int], lat2:Union[float, int]) -> float:
     """
     Calculate the great circle distance between two points 
     on the earth (specified in decimal degrees)
@@ -14,11 +16,12 @@ def haversine(lon1, lat1, lon2, lat2):
     dlon = lon2 - lon1
     dlat = lat2 - lat1
     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a))
-    km = 6367 * c
+    c = 2.0 * asin(sqrt(a))
+    km = 6367.0 * c
     return km
 
-def createEuclideanDistanceMatrix(lats, longs):
+def createEuclideanDistanceMatrix(lats:Sequence[Union[float, int]],
+                                  longs:Sequence[Union[float, int]]) -> np.ndarray[Any]:
     # Only need to find the upper right triangle.
     distm = np.zeros((len(lats), len(lats)))
     for i in range(len(lats)):
