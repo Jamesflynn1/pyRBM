@@ -15,6 +15,6 @@ Contents
 --------
 
 .. toctree::
-   Overview
+   Roadmap
    Usage
    pyRBM

@@ -1,10 +1,11 @@
 # This file is used to allow
-
+from typing import Iterable
 from datetime import timedelta, datetime
+
 import numpy as np
 
 class ModelState:
-    def __init__(self, model_classes, start_datetime) -> None:
+    def __init__(self, model_classes:Iterable[str], start_datetime:datetime) -> None:
         self.MONTHS =  ["jan", "feb", "mar", "apr", "may", "jun",
                         "jul", "aug", "sept", "oct", "nov", "dec"]
         self.model_prefix = "model_"
@@ -54,7 +55,7 @@ class ModelState:
         self._updateCalendarInfo()
     
     
-    def changeDate(self, new_date) -> None:
+    def changeDate(self, new_date:datetime) -> None:
         self.start_datetime = new_date
         self.reset()
 

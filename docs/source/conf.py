@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, os.path.abspath('.'))
 
 project = 'pyRBM'
-copyright = '2021, James Flynn'
+copyright = '2024, James Flynn'
 author = 'James Flynn'
 
 release = '0.1'
@@ -29,6 +29,8 @@ extensions = [
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'sphinx': ('https://www.sphinx-doc.org/en/master/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'sympy': ('https://docs.sympy.org/latest/', None)
 }
 intersphinx_disabled_domains = ['std']
 

@@ -1,6 +1,4 @@
-*/*/__pycache__/*
-*/*/__pycache__
-*/__pycache__
-*/__pycache__/*
-*/*/_build
-*/*/generated
+__pycache__/
+_build/
+generated/
+build/
