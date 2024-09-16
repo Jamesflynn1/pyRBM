@@ -1,11 +1,7 @@
 # Configuration file for the Sphinx documentation builder.
-import sys
-# -- Project information
-
-
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('./pyRBM'))
 
 project = 'pyRBM'
 copyright = '2024, James Flynn'
@@ -44,20 +40,3 @@ html_theme = 'sphinx_rtd_theme'
 epub_show_urls = 'footnote'
 
 add_module_names = False
-
-
-from sphinx.ext.autosummary.generate import AutosummaryRenderer
-
-
-def smart_fullname(fullname):
-    parts = fullname.split(".")
-    return ".".join(parts[1:])
-
-
-def fixed_init(self, app, template_dir=None):
-    AutosummaryRenderer.__old_init__(self, app)
-    self.env.filters["smart_fullname"] = smart_fullname
-
-
-AutosummaryRenderer.__old_init__ = AutosummaryRenderer.__init__
-AutosummaryRenderer.__init__ = fixed_init
