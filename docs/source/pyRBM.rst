@@ -1,5 +1,8 @@
-pyRBM
+pyRBM package
 =============
+
+Subpackages
+-----------
 
 .. toctree::
    :maxdepth: 4
@@ -7,3 +10,11 @@ pyRBM
    pyRBM.Build
    pyRBM.Core
    pyRBM.Simulation
+
+Module contents
+---------------
+
+.. automodule:: pyRBM
+   :members:
+   :undoc-members:
+   :show-inheritance:
