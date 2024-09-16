@@ -5,49 +5,49 @@ We aim to incorporate the following features into pyRBM.
 Where existing solutions and libraries exist, we will intergrate these into pyRBM (possibly as an optional package).
 
 
-###  Simulation management features
+##  Simulation management features
 
 Save and load parameter sets for a model.
 
 Attach meta data to a saved trajectory - parameter set, time series used?, model name/version.
 
-### More trajectory features
+## More trajectory features
 
 Saving resolution, save trajectory to file, save final state to file, save certain times to file.
 
-### Triggerable events and Timestepping Gillespie
+## Triggerable events and Timestepping Gillespie
 
 
 
-### Data - static time series
+## Data - static time series
 
 
-### Create locations and rules from files
+## Create locations and rules from files
 
 
-### Mixed (determanistic) rules and solvers for them
-
-
-
-### Tau-Leaping and associated algorithms
+## Mixed (determanistic) rules and solvers for them
 
 
 
-### Multiple simulations - distributions, parallelisation and efficencies
+## Tau-Leaping and associated algorithms
 
 
 
-### Example models - chemical reactions, epidemology,  economic
+## Multiple simulations - distributions, parallelisation and efficencies
 
 
-### Unit Tests
+
+## Example models - chemical reactions, epidemology,  economic
 
 
-### Parameter estimation techniques and SINDy
+## Unit Tests
 
 
-### User interface for model creation (stretch)
+## Parameter estimation techniques and SINDy
 
 
-### User interface for simulation management (stretch)
+## User interface for model creation (stretch)
+
+
+## User interface for simulation management (stretch)
 
