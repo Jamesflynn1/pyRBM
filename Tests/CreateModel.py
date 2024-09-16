@@ -1,7 +1,7 @@
 import datetime
 
 import pyRBM.Core.Model as Model
-import pyRBM.Build.Locations as ModelLocations
+import pyRBM.Build.Compartment as Compartments
 import pyRBM.Build.RuleTemplates as BasicRules
 import pyRBM.Simulation.Solvers as Solvers
 
@@ -21,10 +21,10 @@ model_constants = {
 
 supplyChainClasses = [["NH4", "tonnes"], ["N2", "m^3"], ["H2", "m^3"], ["CH4", "m^3"]]
 
-class FarmRegion(ModelLocations.Location):
+class FarmRegion(Compartments.Location):
     def __init__(self, crop_list:list, lat:float, long:float, name:str, constants = None):
         # Sets lat/long and creates and empty set of compartment labels.
-        super().__init__(lat, long, name, loc_type="FarmRegion", constants=constants)
+        super().__init__(lat, long, name, comp_type="FarmRegion", constants=constants)
         # Crops exist in three stages in this simplified model: planted, growing and harvested.
         for crop in crop_list:
             self.class_labels.add(crop[0])
@@ -85,9 +85,8 @@ def supplyChainLocations():
     
     return all_locations
 
-model = Model.Model("Basic Crop")
+model = Model.Model("Basic Crop 2")
 model.buildModel(supplyChainClasses, returnCropRules, supplyChainLocations, write_to_file = True, save_model_folder="Tests/ModelFiles/")
-
 model_solver = Solvers.HKOSolver(debug=False)
 #model_solver = Solvers.GillespieSolver(use_cached_propensities = True, no_rules_behaviour="step")
 model.initializeSolver(model_solver)

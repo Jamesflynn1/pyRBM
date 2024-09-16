@@ -6,13 +6,13 @@ from typing import Any, Iterable, Callable, Union, Optional
 import numpy as np
 
 from pyRBM.Build.Classes import Classes
-from pyRBM.Build.Locations import Locations, Location, returnDefaultLocation
+from pyRBM.Build.Compartment import Compartments, Compartment, returnDefaultCompartment
 from pyRBM.Build.Rules import Rules, Rule
 from pyRBM.Build.RuleMatching import returnMatchedRulesDict
 from pyRBM.Build.Utils import createEuclideanDistanceMatrix
 
 from pyRBM.Core.Cache import (ModelPaths, writeDictToJSON, loadClasses,
-                              loadLocations, loadMatchedRules)
+                              loadCompartments, loadMatchedRules)
 from pyRBM.Core.Plotting import SolverDataPlotting
 
 from pyRBM.Simulation.State import ModelState
@@ -23,19 +23,19 @@ from pyRBM.Simulation.Trajectory import Trajectory
 
 
 class Model:
-    """A cohesive collection of parsed rules, locations and classes
+    """A cohesive collection of parsed rules, compartments and classes
 
     Attributes:
 
         model_name (str).
 
         contains_builtin_classes (bool): True if model_ classes should be added to the class list, False otherwise. Currently unused.
-        no_location_model (bool): True if create_locations_func was not passed and a dummy location was created, False otherwise.
+        no_compartment_model (bool): True if create_compartments_func was not passed and a dummy compartment was created, False otherwise.
         defined_classes:
 
-        create_locations_func (Callable, optional): a function accepting no arguments used to create and return a list of all model Locations in createLocations(). If no
+        create_compartments_func (Callable, optional): a function accepting no arguments used to create and return a list of all model Compartments in createCompartments(). If no
         create_rules_func (Callable): a function accepting no arguments used to create and return a list of all model Rules in createRules().
-        distance_func (Callable): a function that returns a pairwise distance matrix over all locations 
+        distance_func (Callable): a function that returns a pairwise distance matrix over all compartments 
 
     """
     def __init__(self, model_name:str) -> None:
@@ -45,35 +45,35 @@ class Model:
 
         self.model_paths = ModelPaths()
         
-    def createLocations(self) -> dict[str, dict[str, Any]]:
+    def createCompartments(self) -> dict[str, dict[str, Any]]:
         """ Parse all compartments returned from the `self._create_rules_func`, perform rule validity and cohesion checks and return them in dictionary format.
         """
-        all_locations = Locations(self.defined_classes, self._distance_func)
-        locations_list = None
-        if not self._create_locations_func is None:
-            locations_list = self._create_locations_func()
-            self.no_location_model = False
+        all_compartments = Compartments(self.defined_classes, self._distance_func)
+        compartments_list = None
+        if not self._create_compartments_func is None:
+            compartments_list = self._create_compartments_func()
+            self.no_compartment_model = False
         else:
-            locations_list = [returnDefaultLocation(self.classes_defintions)]
-            print("No locations passed to model constructor.",
-            "Creating dummy location: Default, with type: any ","Will disregard rule type restrictions.")
-            self.no_location_model = True
-        all_locations.addLocations(locations_list)
-        # Distance computation done as part of writeJSON - set as location constants
-        locations_dict = all_locations.returnLocationsDict()
-        self.location_constants = all_locations.returnAllLocationConstantNames()
+            compartments_list = [returnDefaultCompartment(self.classes_defintions)]
+            print("No compartments passed to model constructor.",
+            "Creating dummy compartment: Default, with type: any ","Will disregard rule type restrictions.")
+            self.no_compartment_model = True
+        all_compartments.addCompartments(compartments_list)
+        # Distance computation done as part of writeJSON - set as compartment constants
+        compartments_dict = all_compartments.returnCompartmentsDict()
+        self.compartment_constants = all_compartments.returnAllCompartmentConstantNames()
 
-        return locations_dict
+        return compartments_dict
 
     def createRules(self) -> dict[str, dict[str, Any]]:
         # Use np.identity(len()) .... for no change
         """ Parse all rules returned from the `self._create_rules_func`, perform rule validity/cohesion checks and return the rules in dictionary format.
         Ret
         """
-        all_rules = Rules(self.defined_classes, self.location_constants)
+        all_rules = Rules(self.defined_classes, self.compartment_constants)
         rules = self._create_rules_func()
         all_rules.addRules(rules)
-        if self.no_location_model:
+        if self.no_compartment_model:
             all_rules.removeTypeRequirement()
         return all_rules.returnMetaRuleDict()
 
@@ -98,29 +98,29 @@ class Model:
         additional_classes = []
         if self.contains_builtin_classes:
             additional_classes = Classes().returnBuiltInClasses()
-        return returnMatchedRulesDict(self._rules_dict, self._locations_dict, additional_classes)
+        return returnMatchedRulesDict(self._rules_dict, self._compartments_dict, additional_classes)
     
     
     def buildModel(self, classes_defintions:Iterable[Iterable[str]],
                    create_rules:Callable[[], Iterable[Rule]],
-                   create_locations:Optional[Callable[[], Iterable[Location]]] = None,
-                   distance_func = createEuclideanDistanceMatrix,
+                   create_compartments:Optional[Callable[[], Iterable[Compartment]]] = None,
+                   distance_func:Optional[Callable] = createEuclideanDistanceMatrix,
                    write_to_file:bool = False, save_meta_rules:bool = False,
                    save_model_folder:str = "/ModelFiles/",
-                   location_filename:str = "Locations",
-                   matched_rules_filename:str = "LocationMatchedRules",
+                   compartment_filename:str = "Compartments",
+                   matched_rules_filename:str = "CompartmentMatchedRules",
                    classes_filename:str = "Classes",
                    metarule_filename:str = "MetaRules") -> None:
         
         
         self.classes_defintions = classes_defintions
-        self._create_locations_func = create_locations
+        self._create_compartments_func = create_compartments
         self._create_rules_func = create_rules
         self._distance_func = distance_func
         self.save_model_folder = save_model_folder
 
         self._classes_dict = self.defineClasses()
-        self._locations_dict = self.createLocations()
+        self._compartments_dict = self.createCompartments()
         self._rules_dict = self.createRules()
         self._matched_rules_dict = self.matchRules()
 
@@ -128,7 +128,7 @@ class Model:
 
         if self.write_to_file:
             self.model_paths = ModelPaths(metarules_filename=metarule_filename if save_meta_rules else None,
-                                          locations_filename=location_filename if self.no_location_model else None,
+                                          compartments_filename=compartment_filename if self.no_compartment_model else None,
                                           matched_rules_filename=matched_rules_filename,
                                           classes_filename=classes_filename,
                                           model_folder_path_to=save_model_folder,
@@ -139,12 +139,12 @@ class Model:
             if self.model_paths.metarules_path is not None:
                 files_to_write.append((self._rules_dict, self.model_paths.metarules_path, "meta rule dict"))
             
-            if self.model_paths.locations_path is not None:
-                files_to_write.append((self._locations_dict, self.model_paths.locations_path, "locations dict"))
+            if self.model_paths.compartments_path is not None:
+                files_to_write.append((self._compartments_dict, self.model_paths.compartments_path, "compartments dict"))
 
 
-            self.save_model_folder,self.location_filename,self.matched_rules_filename,\
-                self.classes_filename,self.metarule_filename = [save_model_folder,location_filename,
+            self.save_model_folder,self.compartment_filename,self.matched_rules_filename,\
+                self.classes_filename,self.metarule_filename = [save_model_folder,compartment_filename,
                                                                 matched_rules_filename,classes_filename,
                                                                 metarule_filename]
             
@@ -158,21 +158,21 @@ class Model:
         self.convertToSimulation()
 
     def convertToSimulation(self) -> None:
-        """ Transform internal dict/json representations created from `buildModel` into `pyRBM.Simulation` `Classes`, `Location`s and `Rule`s. Creates new `ModelState` and `Trajectory` object to account for the 
+        """ Transform internal dict/json representations created from `buildModel` into `pyRBM.Simulation` `Classes`, `Compartment`s and `Rule`s. Creates new `ModelState` and `Trajectory` object to account for the 
         change in state.
 
-        Uninitializes `self.solver` as the solver is initialize with respect to the prior rules, locations and matched indices.
+        Uninitializes `self.solver` as the solver is initialize with respect to the prior rules, compartments and matched indices.
 
         WARNING:
             This function overwrites `self.trajectory` and therefore possibly a prior `Trajectory`.
         """
         self.classes, self.builtin_classes = loadClasses(classes_dict=self._classes_dict)
-        self.locations = loadLocations(build_locations_dict=self._locations_dict)
-        self.rules, self.matched_indices = loadMatchedRules(self.locations,
+        self.compartments = loadCompartments(build_compartments_dict=self._compartments_dict)
+        self.rules, self.matched_indices = loadMatchedRules(self.compartments,
                                                             num_builtin_classes=len(self.builtin_classes),
                                                             matched_rule_dict=self._matched_rules_dict)
 
-        self.trajectory = Trajectory(self.locations)
+        self.trajectory = Trajectory(self.compartments)
         self.model_state = ModelState(self.builtin_classes, datetime.datetime.now())
 
         self.solver = None
@@ -180,38 +180,38 @@ class Model:
         self.model_initialized = True
         self.solver_initialized = False
 
-    def loadModelFromJSONFiles(self, location_filename:str = "Locations",
-                               matched_rules_filename:str = "LocationMatchedRules",
+    def loadModelFromJSONFiles(self, compartment_filename:str = "Compartments",
+                               matched_rules_filename:str = "CompartmentMatchedRules",
                                classes_filename:str = "Classes",
                                model_folder:str = "Backend/ModelFiles/",
                                model_name:Optional[str]="") -> None:
-        """ Loads json representations of the model created from `buildModel` into `pyRBM.Simulation `Classes`, `Location`s and `Rule`s. Creates new `ModelState`, `Trajectory` and `ModelPaths` objects.
+        """ Loads json representations of the model created from `buildModel` into `pyRBM.Simulation `Classes`, `Compartment`s and `Rule`s. Creates new `ModelState`, `Trajectory` and `ModelPaths` objects.
 
-        Uninitializes `self.solver` as the solver is initialize with respect to the prior rules, locations and matched indices.
+        Uninitializes `self.solver` as the solver is initialize with respect to the prior rules, compartments and matched indices.
 
         WARNING:
             This function overwrites `self.trajectory` and therefore possibly a prior `Trajectory`.
         
         Args:
-            location_filename (str): 
+            compartment_filename (str): 
             matched_rules_filename (str): 
             classes_filename (str): 
             model_folder (str): 
             model_name (str, optional): 
         """
-        self.model_paths = ModelPaths(matched_rules_filename, location_filename,
+        self.model_paths = ModelPaths(matched_rules_filename, compartment_filename,
                                       model_folder, model_name, classes_filename, None)
 
         self.classes, self.builtin_classes = loadClasses(classes_filename = self.model_paths.classes_path)
-        if self.model_paths.locations_path is None:
-            self.locations = loadLocations(build_locations_dict=returnDefaultLocation(self.classes))
+        if self.model_paths.compartments_path is None:
+            self.compartments = loadCompartments(build_compartments_dict=returnDefaultCompartment(self.classes))
         else:
-            self.locations = loadLocations(locations_filename = self.model_paths.locations_path)
-        self.rules, self.matched_indices = loadMatchedRules(self.locations, num_builtin_classes=len(self.builtin_classes),
+            self.compartments = loadCompartments(compartments_filename = self.model_paths.compartments_path)
+        self.rules, self.matched_indices = loadMatchedRules(self.compartments, num_builtin_classes=len(self.builtin_classes),
                                                                   matched_rules_filename=self.model_paths.matched_rules_path)
 
 
-        self.trajectory = Trajectory(self.locations)
+        self.trajectory = Trajectory(self.compartments)
         self.model_state = ModelState(self.builtin_classes, datetime.datetime.now())
         
         self.solver = None
@@ -219,7 +219,7 @@ class Model:
         self.model_initialized = True
 
     def initializeSolver(self, solver:Solver) -> None:
-        """ Instatiates the provided `solver` class with the model locations, rules and matched indices. Computes the rule to rule map used in 
+        """ Instatiates the provided `solver` class with the model compartments, rules and matched indices. Computes the rule to rule map used in 
         solver propensity caching if `solver.use_cached_propensities` is True. Old solver stats are overwritten.
 
         A concrete class (e.g. `GillespieSolver`) that `Solver` should be used and not the `Solver` class
@@ -229,7 +229,7 @@ class Model:
         """
         if self.model_initialized:
             if solver.use_cached_propensities:
-                self.rule_propensity_update_dict = returnOneStepRuleUpdates(self.rules, self.locations,
+                self.rule_propensity_update_dict = returnOneStepRuleUpdates(self.rules, self.compartments,
                                                                             self.matched_indices,
                                                                             self.model_state.returnModelClasses())
             else:
@@ -241,7 +241,7 @@ class Model:
             self.simulation_number = 0
 
             self.solver = solver
-            self.solver.initialize(self.locations, self.rules, self.matched_indices, self.model_state,
+            self.solver.initialize(self.compartments, self.rules, self.matched_indices, self.model_state,
                                    self.rule_propensity_update_dict)
             self.solver_initialized = True
 
@@ -263,16 +263,16 @@ class Model:
             This will overwrite the `self.trajectory`, please store this variable for future use if desired.
         
         Specifically: 
-            `class_values` are reset to `initial_values` for each location.
+            `class_values` are reset to `initial_values` for each compartment.
             A new `self.trajectory` is created.
             `self.model_state` is reset to it's initial values include the start date.
             `self.solver` resets all cached propensity values but keeps the old `propensity_update_dict` value.
 
         """
-        for location in self.locations:
-            location.reset()
-        # Trajectory uses current location values so needs to be defined after location values reset.
-        self.trajectory = Trajectory(self.locations)
+        for compartment in self.compartments:
+            compartment.reset()
+        # Trajectory uses current compartment values so needs to be defined after compartment values reset.
+        self.trajectory = Trajectory(self.compartments)
         self.model_state.reset()
         self.solver.reset()
 
@@ -305,12 +305,12 @@ class Model:
             self.resetSimulation()
             start_perf_time = time.perf_counter()
             while self.model_state.elapsed_time < time_limit and self.model_state.iterations < max_iterations:
-                # Simulate one step should update the location objects automatically with the new compartment values.
+                # Simulate one step should update the compartment objects automatically with the new compartment values.
                 new_time = self.solver.simulateOneStep(self.model_state.elapsed_time)
                 self.model_state.processUpdate(new_time)
-                # TODO To save memory - could just add changed location values
-                for location_index, location in enumerate(self.locations):
-                    self.trajectory.addEntry(new_time, location.class_values, location_index)
+                # TODO To save memory - could just add changed compartment values
+                for compartment_index, compartment in enumerate(self.compartments):
+                    self.trajectory.addEntry(new_time, compartment.class_values, compartment_index)
 
                 if new_time is None:
                     break
