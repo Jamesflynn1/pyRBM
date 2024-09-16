@@ -105,7 +105,8 @@ def obtainStochiometry(rule:dict[str,Any], locations:list[dict[str,Any]]) -> lis
         - rule: the Rule that we are remapping the propensity and stochiometry to fit each location.
         - locations: location instances (a list the length of rule.types) that fit each of the rule.types.
 
-    Returns: list of expanded stochiometries for all rule locations  
+    Returns:
+        list of expanded stochiometries for all rule locations  
     """
     # Rule
     stoichiometries = rule["stoichiometries"]
