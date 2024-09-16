@@ -143,11 +143,16 @@ class Locations:
         self.coords[0].append(lat)
         self.coords[1].append(long)
     
-    def _registerTypeClass(self, type_str:str, type_class):
-        if type_str in self.type_register:
-            raise(ValueError(f"Type {type_str} already has an associated class {str(self.type_register[type_str])}"))
+    def _registerTypeClass(self, loc_type:str, type_class):
+        """ Associate the loc_type of a location to a type_class.
+
+        Raises:
+            ValueError: if loc_type has been registered to a different type_class.
+        """
+        if loc_type in self.type_register and self.type_register[loc_type] != type_class:
+            raise(ValueError(f"Type {loc_type} already has a different associated class {str(self.type_register[loc_type])}"))
         else:
-            self.type_register[type_str] = type_class
+            self.type_register[loc_type] = type_class
 
     def addLocation(self, location:Location) -> None:
         if isinstance(location, Location):

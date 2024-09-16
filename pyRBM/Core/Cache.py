@@ -7,7 +7,65 @@ import numpy as np
 from pyRBM.Simulation.Rule import Rule
 from pyRBM.Simulation.Location import Location
 
+class ModelPaths:
+    """ Provides paths for created and loaded model files.
 
+    All paths follow the format (model_folder_path_to)(model_name)(filename).
+
+    Filenames should NOT include the file ending.
+    
+    A new ModelPaths object should overwrite the old object when a new model is saved/loaded.
+
+    Attributes:
+        location_path (str|None): the path to the locations .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None.
+        classes_path (str|None): the path to the classes .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None.
+        matched_rules_path (str|None): the path to the matched_rules .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None.
+        metarule_path (str|None): the path to the metarule .json file saved or loaded at this object's creation, if it was saved/loaded, otherwise None.
+        save_model_folder (str|None): the model folder that the 
+    """
+    def __init__(self, matched_rules_filename:Optional[str] = None,
+                 locations_filename:Optional[str] = None,
+                 model_folder_path_to:Optional[str] = None,
+                 model_name:Optional[str] = "",
+                 classes_filename:Optional[str] = None,
+                 metarules_filename:Optional[str] = None):
+        if model_name is None or model_folder_path_to is None:
+            model_name = None
+        else:
+            self.save_model_folder = f"{model_folder_path_to}{model_name}/"
+        self._matched_rules_filename = matched_rules_filename
+        self._locations_filename = locations_filename
+        self._classes_filename = classes_filename
+        self._metarules_filename = metarules_filename
+    # property decorator allows the function to be accessed as a standard class variable
+    @property
+    def locations_path(self) -> Optional[str]:
+        """The path to the locations .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None."""
+        if self._locations_filename is None or self.save_model_folder is None:
+            return None
+        else:
+            return self.save_model_folder+self._locations_filename
+    @property
+    def classes_path(self) -> Optional[str]:
+        """The path to the classes .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None"""
+        if self._classes_filename is None or self.save_model_folder is None:
+            return None
+        else:
+            return self.save_model_folder+self._classes_filename
+    @property
+    def matched_rules_path(self) -> Optional[str]:
+        """ The path to the matched_rules .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None."""
+        if self._matched_rules_filename is None or self.save_model_folder is None:
+            return None
+        else:
+            return self.save_model_folder+self._matched_rules_filename
+    @property
+    def metarules_path(self) -> Optional[str]:
+        """The path to the metarule .json file saved or loaded at this object's creation, if it was saved/loaded, otherwise None."""
+        if self._metarules_filename is None or self.save_model_folder is None:
+            return None
+        else:
+            return self.save_model_folder+self._metarules_filename
 
 def writeDictToJSON(dict_to_write:dict, filename:str,
                     dict_name:str="") -> None:

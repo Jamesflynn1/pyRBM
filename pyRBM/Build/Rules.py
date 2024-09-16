@@ -1,9 +1,16 @@
+""" Defines a Rule class and a Rules helper class
+"""
+
 from typing import Iterable, Any, Union, Optional, Sequence
 
 import numpy as np
 import sympy
 
 def isNonDefaultTargetArray(target_array:list[str]) -> bool:
+    """ Checks if the provided target_array contains any non default (i.e. non None or "Any"/"any") target requirmments.
+    Returns:
+        bool: True if any none default target requirment in `target_array`, False otherwise.
+    """
     for x in target_array:
         if not (x is None or x == "any" or x == "Any"):
             return True
@@ -23,7 +30,8 @@ def returnSympyClassVarsDict(classes:Iterable[str]) -> dict[str, sympy.Symbol]:
 
 class Rule:
     def __init__(self, rule_name:str, targets:Sequence[str]) -> None:
-
+        """ 
+        """
         self.rule_name = rule_name
 
         self.targets = targets
@@ -76,14 +84,26 @@ class Rule:
 
     def checkRuleDefinition(self, builtin_class_symbols:dict[str, sympy.Symbol],
                             locations_constant_symbols:dict[str, sympy.Symbol]) -> None:
+        """ Perform the following validation on the rule definition:
+            1. self.stoichiometies, self.propensities, self.propensity_classes are of the same length as the rule targets.
+            2. each element of self.stoichiometies, self.propensities, self.propensity_classes are not None.
+            3. each propensity at index i, in self.propensities, evaluates to a number when the builtin_class_symbols, locations_constant_symbols and the propensity_classes[i] symbols are evaluated 
+                as 1 (i.e. the propensity is a valid numerical formula).
+        Args:
+            builtin_class_symbols :
+            locations_constant_symbols :
+        """
+        for rule_arrays in (self.stoichiometies, self.propensities, self.propensity_classes, self.stoichiometry_classes):
+            assert(len(rule_arrays) == len(self.targets))
+        
         for i in range(len(self.targets)):
             if self.stoichiometies[i] is None:
                 raise(ValueError(f"Incorrect rule definition for {self.rule_name}\nThe Location type {self.targets[i]} at rule position {str(i+1)} has no defined stochiometry."))
-            elif self.propensities[i] is None:
+            elif self.propensities[i] is None or not isinstance(self.propensities[i], str):
                 raise(ValueError(f"Incorrect rule definition for {self.rule_name}\nThe Location type {self.targets[i]} at rule position {str(i+1)} has no defined propensity."))
-            elif self.propensity_classes[i] is None:
+            elif self.propensity_classes[i] is None or not isinstance(self.propensity_classes[i], list):
                 raise(ValueError(f"Incorrect rule definition for {self.rule_name}\nThe Location type {self.targets[i]} at rule position {str(i+1)} has no defined propensity class requirement."))
-            elif self.stoichiometry_classes[i] is None:
+            elif self.stoichiometry_classes[i] is None or not isinstance(self.propensity_classes[i], list):
                 raise(ValueError(f"Incorrect rule definition for {self.rule_name}\nThe Location type {self.targets[i]} at rule position {str(i+1)} has no defined stochiometry class requirement."))
             
         for index in range(len(self.propensities)):
@@ -92,6 +112,8 @@ class Rule:
             self.validateFormula(sympy_formula, symbols)
             
     def _mergeClassLists(self) -> None:
+        """
+        """
         # Maps new index to class label
         self.rule_classes = []
         for i, _ in enumerate(self.targets):
@@ -119,7 +141,7 @@ class Rule:
                 }
 
 class Rules:
-    def __init__(self, defined_classes, location_constants: Iterable[str]) -> None:
+    def __init__(self, defined_classes:Iterable[str], location_constants: Iterable[str]) -> None:
         self.rules:list[Rule] = []
         self.defined_classes = defined_classes
         self.model_prefix = "model_"
@@ -137,6 +159,9 @@ class Rules:
         self.location_constants_symbols = returnSympyClassVarsDict(location_constants)
     
     def removeTypeRequirement(self, default_type:str = "any") -> None:
+        """ Used to remove the user set (or unset) type requirements for all rules by setting to the default_type. Used for no-compartment models.
+        Should not be used for any multi-compartmental models.
+        """
         for rule in self.rules:
             if len(rule.targets) >= 2:
                 raise(ValueError(f"ERROR: rule {rule.rule_name} has {len(rule.targets)} location targets for a locationless model (requires len(targets == 1))"))
