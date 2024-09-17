@@ -14,10 +14,10 @@ class Solver:
         self.default_step = 1
         self.debug = debug
     
-    def initialize(self, locations, rules,
+    def initialize(self, compartments, rules,
                    matched_indices, model_state:ModelState,
                    propensity_update_dict:Optional[dict] = None) -> None:
-        self.locations = locations
+        self.compartments = compartments
         self.rules = rules
         self.matched_indices = matched_indices
         self.model_state = model_state
@@ -59,7 +59,7 @@ class Solver:
     def updateGivenPropensity(self, rule_i:int, index_set_i:int,
                               model_state_values:list) -> None:
         rule = self.rules[rule_i]
-        new_propensity = rule.returnPropensity(np.take(self.locations,
+        new_propensity = rule.returnPropensity(np.take(self.compartments,
                                                        self.matched_indices[rule_i][index_set_i]),
                                                        model_state_values)
         if self.use_cached_propensities:
@@ -120,20 +120,20 @@ class GillespieSolver(Solver):
         # Random time
         cumulative_prop = 0
         selected_rule_index = None
-        for rule_loc_key, rule_loc_propensity in self.propensities.items():
-            cumulative_prop += rule_loc_propensity
+        for rule_comp_key, rule_comp_propensity in self.propensities.items():
+            cumulative_prop += rule_comp_propensity
             if cumulative_prop > u1*total_propensity:
-               selected_rule_index = rule_loc_key
+               selected_rule_index = rule_comp_key
                break
         # Only set the last rule used when using the caching for propensities.
         if self.use_cached_propensities:
             self.last_rule_index_set = selected_rule_index
-        selected_rule, selected_locations = selected_rule_index.split(" ")
-        assert (self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.locations,
+        selected_rule, selected_compartments = selected_rule_index.split(" ")
+        assert (self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
                                                                                   self.matched_indices[int(selected_rule)]
-                                                                                  [int(selected_locations)])))
+                                                                                  [int(selected_compartments)])))
         if self.debug:
-            self.collectStats(int(selected_rule), int(selected_locations), total_propensity)
+            self.collectStats(int(selected_rule), int(selected_compartments), total_propensity)
         return current_time + u2
 
 class HKOSolver(Solver):
@@ -160,7 +160,7 @@ class HKOSolver(Solver):
 
         # Return the propensity of the subrule given by rule_i triggered with index_set_i, 
         # and the current global model state values.
-        new_propensity = rule.returnPropensity(np.take(self.locations,
+        new_propensity = rule.returnPropensity(np.take(self.compartments,
                                                        self.matched_indices[rule_i][index_set_i]),
                                                        model_state_values)
 
@@ -210,7 +210,7 @@ class HKOSolver(Solver):
                 # Start from the left hand side of rule_i's propensity interval
                 cumulative_rule_prop -= rule_propensity
                 selected_rule_propensity_dict = self.propensities[str(rule_i)]
-                # Find which subrule (i.e. which locations ("index set") triggered the rule)
+                # Find which subrule (i.e. which compartments ("index set") triggered the rule)
                 for index_set_key in selected_rule_propensity_dict:
                     cumulative_rule_prop += selected_rule_propensity_dict[index_set_key]
                     if cumulative_rule_prop > random_propensity:
@@ -220,7 +220,7 @@ class HKOSolver(Solver):
         # Only set the last rule used when using the caching for propensities.
         if self.use_cached_propensities:
             self.last_rule_index_set = f"{selected_rule} {selected_index_set}"
-        assert (self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.locations,
+        assert (self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
                                                                                   self.matched_indices[int(selected_rule)]
                                                                                   [int(selected_index_set)])))
 

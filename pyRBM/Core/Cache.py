@@ -5,7 +5,7 @@ from typing import Optional, Any
 import numpy as np
 
 from pyRBM.Simulation.Rule import Rule
-from pyRBM.Simulation.Location import Location
+from pyRBM.Simulation.Compartment import Compartment
 
 class ModelPaths:
     """ Provides paths for created and loaded model files.
@@ -17,14 +17,14 @@ class ModelPaths:
     A new ModelPaths object should overwrite the old object when a new model is saved/loaded.
 
     Attributes:
-        location_path (str|None): the path to the locations .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None.
+        compartment_path (str|None): the path to the compartments .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None.
         classes_path (str|None): the path to the classes .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None.
         matched_rules_path (str|None): the path to the matched_rules .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None.
         metarule_path (str|None): the path to the metarule .json file saved or loaded at this object's creation, if it was saved/loaded, otherwise None.
         save_model_folder (str|None): the model folder that the 
     """
     def __init__(self, matched_rules_filename:Optional[str] = None,
-                 locations_filename:Optional[str] = None,
+                 compartments_filename:Optional[str] = None,
                  model_folder_path_to:Optional[str] = None,
                  model_name:Optional[str] = "",
                  classes_filename:Optional[str] = None,
@@ -34,17 +34,17 @@ class ModelPaths:
         else:
             self.save_model_folder = f"{model_folder_path_to}{model_name}/"
         self._matched_rules_filename = matched_rules_filename
-        self._locations_filename = locations_filename
+        self._compartments_filename = compartments_filename
         self._classes_filename = classes_filename
         self._metarules_filename = metarules_filename
     # property decorator allows the function to be accessed as a standard class variable
     @property
-    def locations_path(self) -> Optional[str]:
-        """The path to the locations .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None."""
-        if self._locations_filename is None or self.save_model_folder is None:
+    def compartments_path(self) -> Optional[str]:
+        """The path to the compartments .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None."""
+        if self._compartments_filename is None or self.save_model_folder is None:
             return None
         else:
-            return self.save_model_folder+self._locations_filename
+            return self.save_model_folder+self._compartments_filename
     @property
     def classes_path(self) -> Optional[str]:
         """The path to the classes .json file saved or loaded or created at this object's creation, if it was saved/loaded, otherwise None"""
@@ -119,46 +119,46 @@ def processFilenameOrDict(filename:Optional[str],
         model_data = provided_dict
     return model_data
 
-def loadLocations(locations_filename:Optional[str] = None,
-                  build_locations_dict:Optional[dict[str,dict[str,Any]]] = None) -> list[Location]:
-    """ Loads locations from either a model location json file (see ModelCreation for details) 
-    or from a pyRBM.Build.Locations dictionary.
+def loadCompartments(compartments_filename:Optional[str] = None,
+                  build_compartments_dict:Optional[dict[str,dict[str,Any]]] = None) -> list[Compartment]:
+    """ Loads compartments from either a model compartment json file (see ModelCreation for details) 
+    or from a pyRBM.Build.Compartments dictionary.
 
-    Requires either locations_filename or build_locations_dict to be passed as an argument.
+    Requires either compartments_filename or build_compartments_dict to be passed as an argument.
 
-    If both arguments are provided, the function will load from the json at the locations_filename path.
+    If both arguments are provided, the function will load from the json at the compartments_filename path.
 
     Args:
-        locations_filename (str, optional): the string of the file location containing the location definitions.
-        build_locations_dict (dict, optional): a dictionary of pyRBM.Build.Locations 
-                (e.g. from calling Locations.returnLocationsDict())
+        compartments_filename (str, optional): the string of the file compartment containing the compartment definitions.
+        build_compartments_dict (dict, optional): a dictionary of pyRBM.Build.Compartments 
+                (e.g. from calling Compartments.returnCompartmentsDict())
     Returns:
-        list: pyRBM.Simulation compatible Locations for each location in either location_file or build_locations_dict.
+        list: pyRBM.Simulation compatible Compartments for each compartment in either compartment_file or build_compartments_dict.
     """
-    location_list = []
-    locations_data = processFilenameOrDict(locations_filename, build_locations_dict)
+    compartment_list = []
+    compartments_data = processFilenameOrDict(compartments_filename, build_compartments_dict)
 
-    for loc_index in range(len(locations_data)):
-        location_dict = locations_data[str(loc_index)]
-        location = Location(index=loc_index, name=location_dict["location_name"], lat=float(location_dict["lat"]),
-                                     long=float(location_dict["long"]), loc_type=location_dict["type"],
-                                     label_mapping=location_dict["label_mapping"],
-                                     initial_class_values=np.array(location_dict["initial_values"]),
-                                     location_constants=location_dict["location_constants"])
-        location_list.append(location)
-    return location_list
+    for comp_index in range(len(compartments_data)):
+        compartment_dict = compartments_data[str(comp_index)]
+        compartment = Compartment(index=comp_index, name=compartment_dict["compartment_name"], lat=float(compartment_dict["lat"]),
+                                     long=float(compartment_dict["long"]), comp_type=compartment_dict["type"],
+                                     label_mapping=compartment_dict["label_mapping"],
+                                     initial_class_values=np.array(compartment_dict["initial_values"]),
+                                     compartment_constants=compartment_dict["compartment_constants"])
+        compartment_list.append(compartment)
+    return compartment_list
     
 
-def loadMatchedRules(locations,  num_builtin_classes:int, matched_rules_filename:Optional[str] = None,
+def loadMatchedRules(compartments,  num_builtin_classes:int, matched_rules_filename:Optional[str] = None,
                      matched_rule_dict:Optional[dict]=None) -> tuple[list[Rule], list[list[int]]]:
     """ Loads all rules from a model matched rules json (see ModelCreation for details).
 
     Args: 
-        locations (): 
+        compartments (): 
         num_builtin_classes: 
-        matched_rules_filename: the string of the file location containing the rule definitions.
+        matched_rules_filename: the string of the file compartment containing the rule definitions.
         matched_rule_dict: 
-    Returns: [a list of rules remapped to all possible location sets, 
+    Returns: [a list of rules remapped to all possible compartment sets, 
               a 2d list of lists of satisfying indices for the corresponding rule]
     """
     rules_list = []
@@ -171,13 +171,13 @@ def loadMatchedRules(locations,  num_builtin_classes:int, matched_rules_filename
         propensities = []
         # Convert stochiometries and propensities to numpy arrays -
         # need to use a list of arrays as the 2nd dimension of the array has varying dimension.
-        for loc_stoichiometry in rules_dict["stoichiomety"]:
-            stochiometries.append(np.array(loc_stoichiometry))
-        for loc_propensity in rules_dict["propensity"]:
-            propensities.append(loc_propensity)
+        for comp_stoichiometry in rules_dict["stoichiomety"]:
+            stochiometries.append(np.array(comp_stoichiometry))
+        for comp_propensity in rules_dict["propensity"]:
+            propensities.append(comp_propensity)
 
         rule = Rule(propensity=propensities, stoichiometry=stochiometries, rule_name=rules_dict["rule_name"],
-                         num_builtin_classes=num_builtin_classes, locations=locations,
+                         num_builtin_classes=num_builtin_classes, compartments=compartments,
                          rule_index_sets=rules_dict["matching_indices"])
         
         applicable_indices.append(rules_dict["matching_indices"])
