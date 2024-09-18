@@ -28,7 +28,7 @@ class SingleLocationProductionRule(SingleLocationRule):
                     product_classes:list[str], product_amount:Sequence[Union[float, int]],
                     propensity:str, propensity_classes:list[str],
                     rule_name:str ="SINGLE LOCATION PRODUCTION RULE") -> None:
-            
+
             reactants_len = len(reactant_classes)
             product_len = len(product_classes)
             stoichiometry = np.zeros(reactants_len+product_len)
@@ -59,10 +59,10 @@ class TransportRule(Rule):
                 the second element is a list of the classes required by the target propensity term.
             rule_name (str, optional):
           """
-          super().__init__(rule_name, [source, target])
+          assert len(propensities) == 2
+          assert len(propensity_classes) == 2
 
-          assert(len(propensities) == 2)
-          assert(len(propensity_classes) == 2)
+          super().__init__(rule_name, [source, target])
 
           source_stochiometry = np.array([-transport_amount])
           target_stochiometry = np.array([transport_amount])

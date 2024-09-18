@@ -7,13 +7,13 @@ class Solver:
     def __init__(self, use_cached_propensities:bool = True,
                  no_rules_behaviour:str = "step", debug:bool = True) -> None:
         self.use_cached_propensities = use_cached_propensities
-        
+
         # Either step or exit
         assert (no_rules_behaviour in ["step", "exit"])
         self.no_rules_behaviour = no_rules_behaviour
         self.default_step = 1
         self.debug = debug
-    
+
     def initialize(self, compartments, rules,
                    matched_indices, model_state:ModelState,
                    propensity_update_dict:Optional[dict] = None) -> None:
@@ -24,7 +24,7 @@ class Solver:
 
         # Read as propensity_update_dict if not None, otherwise a blank dictionary, avoids mutable default value
         self.propensity_update_dict = propensity_update_dict if propensity_update_dict is not None else {}
-    
+
         self.reset()
 
     def reset(self) -> None:
@@ -32,14 +32,14 @@ class Solver:
         self.last_rule_index_set = None
         if self.use_cached_propensities:
             self.total_propensity = 0
-        
+
         # Reset solver stats after a completed simulation
         if self.debug:
             self.current_stats = {}
 
     def simulateOneStep(self):
         raise(TypeError("Abstract class Solver, please use a concrete implementation."))
-    
+
     # rules_and_matched_indices is used to determine which propensities to recompute, if None is provided this is all propensities.
     # returns total propensity
 
@@ -61,7 +61,7 @@ class Solver:
         rule = self.rules[rule_i]
         new_propensity = rule.returnPropensity(np.take(self.compartments,
                                                        self.matched_indices[rule_i][index_set_i]),
-                                                       model_state_values)
+                                                       model_state_values, index_set_i)
         if self.use_cached_propensities:
             propensity_diff = (new_propensity - self.propensities.get(f"{rule_i} {index_set_i}", 0.0))
             self.total_propensity += propensity_diff
@@ -79,7 +79,7 @@ class Solver:
                                          rule_prop_update_set)
         else:
             self.updateGivenPropensities(update_propensity_func)
-    
+
     def collectStats(self, rule:int, index_set:int, total_propensity) -> None:
         assert(self.debug)
         self.current_stats["rule_triggered"] = str(rule)
@@ -96,12 +96,12 @@ class GillespieSolver(Solver):
     def __init__(self, use_cached_propensities:bool = True,
                  no_rules_behaviour:str = "step", debug:bool = True) -> None:
         super().__init__(use_cached_propensities, no_rules_behaviour, debug)
-    
+
     def simulateOneStep(self, current_time):
         self.performPropensityUpdates(self.updateGivenPropensity)
 
         total_propensity = self.returnTotalPropensity()
-        
+
         if total_propensity <= 0:
             if self.no_rules_behaviour == "end":
                 print("Finishing model simulation early.\n No rules left to trigger - all rules have 0 propensity.")
@@ -110,9 +110,9 @@ class GillespieSolver(Solver):
                 print(f"Stepping {self.default_step} ahead.\n No rules left to trigger - all rules have 0 propensity.")
                 if self.debug:
                     self.collectStats(None, None, 0)
-                    
+
                 return current_time + self.default_step
-        
+
         # Generate 0 to 1
         # Random rule
         u1, r2 = np.random.random_sample(2)
@@ -142,7 +142,7 @@ class HKOSolver(Solver):
                  debug:bool = True) -> None:
         super().__init__(use_cached_propensities,
                          no_rules_behaviour, debug)
-    
+
     def reset(self) -> None:
         super().reset()
         # Rule index -> Subrule index -> subrule propensity
@@ -150,19 +150,19 @@ class HKOSolver(Solver):
         self.propensities = {str(rule_i):{str(matched_indices_i):0
                                           for matched_indices_i in range(len(self.matched_indices[rule_i]))}
                                             for rule_i in range(len(self.rules))}
-        
+
         # Rule index -> rule propensity
         self.rule_propensities = {str(i):0 for i in range(len(self.rules))}
-    
+
     def updateGivenPropensity(self, rule_i:int, index_set_i:int,
                               model_state_values:list) -> None:
         rule = self.rules[rule_i]
 
-        # Return the propensity of the subrule given by rule_i triggered with index_set_i, 
+        # Return the propensity of the subrule given by rule_i triggered with index_set_i,
         # and the current global model state values.
         new_propensity = rule.returnPropensity(np.take(self.compartments,
                                                        self.matched_indices[rule_i][index_set_i]),
-                                                       model_state_values)
+                                                       model_state_values, index_set_i)
 
         # We use the subrule propensity diff to update the stored propensity in rule_propensities and total_propensity
         propensity_diff = new_propensity - self.propensities[str(rule_i)].get(str(index_set_i), 0.0)
@@ -180,7 +180,7 @@ class HKOSolver(Solver):
         self.performPropensityUpdates(self.updateGivenPropensity)
 
         total_propensity = self.returnTotalPropensity()
-        
+
         if total_propensity <= 0:
             if self.no_rules_behaviour == "end":
                 print("Finishing model simulation early.\n No rules left to trigger - all rules have 0 propensity.")
@@ -188,14 +188,14 @@ class HKOSolver(Solver):
             elif self.no_rules_behaviour == "step":
                 print(f"Stepping {self.default_step} ahead.\n No rules left to trigger - all rules have 0 propensity.")
                 return current_time + self.default_step
-        
+
         # Generate 0 to 1
         # Random rule
         u1, r2 = np.random.random_sample(2)
         u2 = -np.log(r2)*(1/total_propensity)
         # Random time
         cumulative_rule_prop = 0
-        
+
         selected_rule = None
         selected_index_set = None
 
@@ -228,5 +228,5 @@ class HKOSolver(Solver):
             self.collectStats(int(selected_rule),
                               int(selected_index_set),
                               total_propensity)
-        
+
         return current_time + u2

@@ -147,7 +147,7 @@ def loadCompartments(compartments_filename:Optional[str] = None,
                                      compartment_constants=compartment_dict["compartment_constants"])
         compartment_list.append(compartment)
     return compartment_list
-    
+
 
 def loadMatchedRules(compartments,  num_builtin_classes:int, matched_rules_filename:Optional[str] = None,
                      matched_rule_dict:Optional[dict]=None) -> tuple[list[Rule], list[list[int]]]:
@@ -164,7 +164,7 @@ def loadMatchedRules(compartments,  num_builtin_classes:int, matched_rules_filen
     rules_list = []
     applicable_indices = []
     rules_data =  processFilenameOrDict(matched_rules_filename, matched_rule_dict)
-    
+
     for rule_index in range(len(rules_data)):
         rules_dict = rules_data[str(rule_index)]
         stochiometries = []
@@ -179,7 +179,7 @@ def loadMatchedRules(compartments,  num_builtin_classes:int, matched_rules_filen
         rule = Rule(propensity=propensities, stoichiometry=stochiometries, rule_name=rules_dict["rule_name"],
                          num_builtin_classes=num_builtin_classes, compartments=compartments,
                          rule_index_sets=rules_dict["matching_indices"])
-        
+
         applicable_indices.append(rules_dict["matching_indices"])
         rules_list.append(rule)
     return (rules_list, applicable_indices)

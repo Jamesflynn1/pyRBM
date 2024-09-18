@@ -9,6 +9,7 @@ class Classes:
     
     def addClass(self, class_name:str, class_measurement_unit:str,
                  class_restriction:str = "None") -> None:
+        class_name = class_name.replace(" ", "_").lower()
         if class_name in self.base_model_string:
             raise(ValueError(f"Class: {class_name} cannot contain model prefix{self.base_model_string}"))
         elif not class_name in self.class_names:

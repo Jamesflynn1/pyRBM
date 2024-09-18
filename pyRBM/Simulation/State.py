@@ -23,7 +23,7 @@ class ModelState:
                 self.model_classes[model_class] = None
             else:
                 self.model_classes[model_class] = None
-                raise(ValueError(f"Model class {model_class} not implemented"))
+                raise ValueError(f"Model class {model_class} not implemented")
 
 
         self.elapsed_time = 0
@@ -37,9 +37,9 @@ class ModelState:
             self.start_datetime = start_datetime
             self.current_datetime = start_datetime
         else:
-            raise(ValueError(f"Start date must be of type datetime not {type(start_datetime)}"))
+            raise ValueError(f"Start date must be of type datetime not {type(start_datetime)}")
         self._initaliseCalendarInfo()
-        
+
     def reset(self) -> None:
         self.elapsed_time = 0
         self.iterations = 0
@@ -53,8 +53,8 @@ class ModelState:
         for key in self.IMPLEMENTED_MODEL_CLASSES:
             self.model_classes[key] = 0
         self._updateCalendarInfo()
-    
-    
+
+
     def changeDate(self, new_date:datetime) -> None:
         self.start_datetime = new_date
         self.reset()
@@ -86,7 +86,7 @@ class ModelState:
         if not self.model_classes[f"{self.model_prefix}day"] == current_datetime_info[2]:
             self.model_classes[f"{self.model_prefix}day"] = current_datetime_info[2]
             self.changed_vars.append(f"{self.model_prefix}day")
-        
+
         rounded_hours = round(current_datetime_info[4]/60.0, 1)
         if not self.model_classes[f"{self.model_prefix}hour"] == current_datetime_info[3] + rounded_hours:
             self.model_classes[f"{self.model_prefix}hour"] = current_datetime_info[3] + rounded_hours
@@ -95,7 +95,7 @@ class ModelState:
 
     def processUpdate(self, new_time) -> None:
         self.changed_vars = []
-        if new_time == None:
+        if new_time is None:
             print("Ending model simulation")
             return
         self._updateTime(new_time)
@@ -109,18 +109,18 @@ class ModelState:
         elif self.time_measurement == "days":
             time_change = timedelta(days=time_diff)
         else:
-            raise(ValueError(f"Unsupported time increment type {self.time_measurement}"))
-        
+            raise ValueError(f"Unsupported time increment type {self.time_measurement}")
+
         self.current_datetime = self.current_datetime + time_change
         self.elapsed_time = new_time
 
         self._updateCalendarInfo()
-        
+
     def returnModelClassesValues(self) :
         return self.model_classes.values()
-    
+
     def returnModelClasses(self):
         return list(self.model_classes.values())
-                    
+
     def returnChangedVars(self) -> list[str]:
         return self.changed_vars

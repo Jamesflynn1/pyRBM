@@ -49,29 +49,30 @@ def returnRuleMatchingIndices(rules:dict[str,dict[str,Any]],
                 # We keep a dictionary here so we can map explict types.
                 correct_length_rules = {}
                 for comp_index in matched_type_to_indices[rule_targets_i]:
+                    comp_key = str(comp_index)
                     # Which explict types are being used.
                     for rule_key, index_matches in rule_indices.items():
                         for index_matching in index_matches:
                             if comp_index not in index_matching:
-                                if rule_key+"_"+compartments[comp_index]["type"] not in correct_length_rules:
-                                    correct_length_rules[rule_key+"_"+compartments[comp_index]["type"]] = [index_matching+[comp_index]]
+                                if rule_key+"_"+compartments[comp_key]["type"] not in correct_length_rules:
+                                    correct_length_rules[rule_key+"_"+compartments[comp_key]["type"]] = [index_matching+[comp_index]]
                                 else:
-                                    correct_length_rules[rule_key+"_"+compartments[comp_index]["type"]].append(index_matching+[comp_index])
+                                    correct_length_rules[rule_key+"_"+compartments[comp_key]["type"]].append(index_matching+[comp_index])
                                 atleast_one_satisifying = True
                 rule_indices = correct_length_rules
 
             # Prune rules that will never able to be completed to reduce size.
-            #correct_length_rules = [] 
+            #correct_length_rules = []
             #for rule_index in rule_indices:
                 #if len(rule_index) == rule_targets_i+1:
                     #correct_length_rules.append(rule_index)
 
             if not atleast_one_satisifying:
-                raise(ValueError(f"Rule {rule_i} has no satisying compartment for required type index{rule_targets_i}, type {str(rule['target_types'][rule_targets_i])}. Rule will never be trigger - remove rule"))
+                raise ValueError(f"Rule {rule_i} has no satisying compartment for required type index{rule_targets_i}, type {str(rule['target_types'][rule_targets_i])}. Rule will never be trigger - remove rule")
         filled_rules[str(rule_i)] = rule_indices
     return filled_rules
 
-# Return the final propensity for a given rule provided concrete compartments. 
+# Return the final propensity for a given rule provided concrete compartments.
 # Assumption that compartments of the same type have the same compartments.
 def obtainPropensity(rule:dict[str,Any], compartments:list[dict[str,Any]], builtin_classes:list[list[str]]) -> list[str]:
     propensities = rule["propensities"]
@@ -82,10 +83,10 @@ def obtainPropensity(rule:dict[str,Any], compartments:list[dict[str,Any]], built
         # Order: model var, compartment const, compartment class
         for built_in_i, builtin_class in enumerate(builtin_classes):
             new_propensity = new_propensity.replace(builtin_class[0], f"x{built_in_i+len(new_label_mapping)}")
-            
 
         for label_i in new_label_mapping:
             new_propensity = new_propensity.replace(new_label_mapping[label_i], f"x{label_i}")
+
         # Add the built in class at the end of the compartment classes
 
         new_propensities.append(new_propensity)
@@ -127,9 +128,9 @@ def obtainStochiometry(rule:dict[str,Any], compartments:list[dict[str,Any]]) -> 
                     # Only needs to happen once so can be placed here, possibly refactor
                     class_found = True
             if not class_found:
-                raise(ValueError("Rule class not found in compartment class in rule matching (missing stoichiometry class)."))
+                raise ValueError("Rule class not found in compartment class in rule matching (missing stoichiometry class).")
         new_stoichiometries.append(list(new_stoichiometry))
-        
+
     return new_stoichiometries
 
 def returnMatchedRulesDict(rules:dict[str,dict[str,Any]], compartments:dict[str,dict[str,Any]],
@@ -150,7 +151,7 @@ def returnMatchedRulesDict(rules:dict[str,dict[str,Any]], compartments:dict[str,
             # Take the first set as an example
             for compartment_index in matched_rule[concrete_rule_type][0]:
                 example_compartments.append(compartments[str(compartment_index)])
-            
+
             # TODO ensure compatibility with further propensity functions
             concrete_rule_dict["stoichiomety"] = obtainStochiometry(rule, example_compartments)
             concrete_rule_dict["propensity"] = obtainPropensity(rule, example_compartments,

@@ -27,7 +27,7 @@ class FarmRegion(Compartments.Location):
         super().__init__(lat, long, name, comp_type="FarmRegion", constants=constants)
         # Crops exist in three stages in this simplified model: planted, growing and harvested.
         for crop in crop_list:
-            self.class_labels.add(crop[0])
+            self.addClassLabels([crop[0]])
 
 # Crop classes:
 # Biggest crops as example, from defra https://www.gov.uk/government/statistics/agriculture-in-the-united-kingdom-2022/chapter-7-crops
@@ -49,52 +49,53 @@ def returnCropRules():
                                                            rule_name="Purchase Seeds")
 
         sow_crop = BasicRules.SingleLocationProductionRule(target="FarmRegion",
-                                                                        reactant_classes=[f"Seeds_{crop}"], reactant_amount=[1], 
+                                                                        reactant_classes=[f"Seeds_{crop}"], reactant_amount=[1],
                                                                         product_classes=[f"Planted_{crop}"], product_amount=[model_constants[f"{crop}_seeding_rate"]], propensity=f"Seeds_{crop}",
                                                                         propensity_classes=[f"Seeds_{crop}"], rule_name=f"Sow {crop}")
-        
+
         germinating_crop = BasicRules.SingleLocationProductionRule(target="FarmRegion",
-                                                                        reactant_classes=[f"Planted_{crop}"], reactant_amount=[1], 
+                                                                        reactant_classes=[f"Planted_{crop}"], reactant_amount=[1],
                                                                         product_classes=[f"Growing_{crop}"], product_amount=[1], propensity=f"0.1*Planted_{crop}",
                                                                         propensity_classes=[f"Planted_{crop}"], rule_name=f"Germinate {crop}")
         # TODO make dependant on Nitrogen levels ect ect.
         crop_growth = BasicRules.SingleLocationProductionRule(target="FarmRegion",
-                                                                        reactant_classes=[f"Growing_{crop}"], reactant_amount=[1], 
+                                                                        reactant_classes=[f"Growing_{crop}"], reactant_amount=[1],
                                                                         product_classes=[f"Viable_{crop}"], product_amount=[1], propensity=f"Growing_{crop}",
                                                                         propensity_classes=[f"Growing_{crop}"], rule_name=f"Germinate {crop}")
-        
+
         # May need to make propensity based on planted field size, will need to check.
         harvest_crop = BasicRules.SingleLocationProductionRule(target="FarmRegion",
-                                                                        reactant_classes=[f"Viable_{crop}"], reactant_amount=[1], 
+                                                                        reactant_classes=[f"Viable_{crop}"], reactant_amount=[1],
                                                                         product_classes=[f"Harvested_{crop}"], product_amount=[1], propensity=f"Viable_{crop}",
                                                                         propensity_classes=[f"Viable_{crop}"], rule_name=f"Harvest {crop}")
         rules += [purchase_seeds, sow_crop, germinating_crop, crop_growth, harvest_crop]
 
-    return rules
+    transport_rule = BasicRules.TransportRule("FarmRegion", "FarmRegion", "Harvested_Wheat", ["comp_distance_slot_1*Harvested_Wheat/100000","1"],
+                                              10, [["Harvested_Wheat"],["Harvested_Wheat"]], "Example Transport ")
+    return rules + [transport_rule]
 def supplyChainLocations():
     # Billingham terminal - Produces Ammonium nitrate from Ammonia
     # https://www.cfindustries.com/newsroom/2023/billingham-ammonia-plant
     # https://www.cfindustries.com/what-we-do/fertilizer
     all_locations = []
     # Midpoints from wikipedia, South East and London uses South East midpoint (combined to match DEFRA reporting)
-    region_infos = [[54.075, -2.75, "North East"], [55, -1.87, "North West"], [53.566667, -1.2, "Yorkshire & The Humber"], [52.98, -0.75, "East Midlands"], [52.478861, -2.256306, "West Midlands"], 
+    region_infos = [[54.075, -2.75, "North East"], [55, -1.87, "North West"], [53.566667, -1.2, "Yorkshire & The Humber"], [52.98, -0.75, "East Midlands"], [52.478861, -2.256306, "West Midlands"],
                     [52.24, 0.41, "East of England"], [51.3, -0.8, "South East & London"], [50.96, -3.22, "South West"], [56.816738, -4.183963, "Scotland"], [52.33022, -3.766409,"Wales"]]
     for region_info in region_infos:
         all_locations.append(FarmRegion(supplyChainClasses, *region_info))
 
-    
     return all_locations
 
 model = Model.Model("Basic Crop 2")
 model.buildModel(supplyChainClasses, returnCropRules, supplyChainLocations, write_to_file = True, save_model_folder="Tests/ModelFiles/")
-model_solver = Solvers.HKOSolver(debug=False)
+model_solver = Solvers.GillespieSolver(debug=True)
 #model_solver = Solvers.GillespieSolver(use_cached_propensities = True, no_rules_behaviour="step")
 model.initializeSolver(model_solver)
 
 start_date = datetime.datetime(2001, 8, 1)
-cProfile.run('model.simulate(start_date,1000)')
+#cProfile.run('model.simulate(start_date,1000)')
 
-model.simulate(start_date, 1000)
+model.simulate(start_date, 10000, 10000)
 
 
 #for x in range(1000):
