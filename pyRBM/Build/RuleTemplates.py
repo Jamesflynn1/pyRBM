@@ -12,11 +12,16 @@ class SingleLocationRule(Rule):
     """ A template for a rule at a single compartment.
     """
     def __init__(self, target:str, propensity:str, stoichiomety,
-                  propensity_classes:list[str], stoichiometry_classes:list[str],
+                  propensity_classes:Union[list[str], str], stoichiometry_classes:Union[str, list[str]],
                   rule_name:str = "SINGLE LOCATION RULE") -> None:
             """ A template for a rule at a single compartment. TODO
             """
             super().__init__(rule_name, [target])
+            if isinstance(propensity_classes, str):
+                 propensity_classes = [propensity_classes]
+            if isinstance(stoichiometry_classes, str):
+                 stoichiometry_classes = [stoichiometry_classes]
+      
             self.addLinearStoichiomety([0], [stoichiomety],
                                         [stoichiometry_classes])
             self.addSimplePropensityFunction([0], [propensity],
@@ -24,11 +29,24 @@ class SingleLocationRule(Rule):
 
 class SingleLocationProductionRule(SingleLocationRule):
        def __init__(self, target:str,
-                    reactant_classes:list[str], reactant_amount:Sequence[Union[float, int]],
-                    product_classes:list[str], product_amount:Sequence[Union[float, int]],
-                    propensity:str, propensity_classes:list[str],
+                    reactant_classes:Union[list[str], str], reactant_amount:list[Union[float, int]],
+                    product_classes:Union[list[str], str], product_amount:list[Union[float, int]],
+                    propensity:str, propensity_classes:Union[list[str], str],
                     rule_name:str ="SINGLE LOCATION PRODUCTION RULE") -> None:
-            
+            if isinstance(reactant_classes, str):
+                 assert isinstance(reactant_amount, (float,int))
+                 reactant_classes = [reactant_classes]
+                 reactant_amount = [reactant_amount]
+            else:
+                 assert isinstance(reactant_amount, list)
+
+            if isinstance(product_classes, str):
+                 assert isinstance(product_amount, (float,int))
+                 product_classes = [product_classes]
+                 product_amount = [product_amount]
+            else:
+                 assert isinstance(product_amount, list)
+           
             reactants_len = len(reactant_classes)
             product_len = len(product_classes)
             stoichiometry = np.zeros(reactants_len+product_len)
@@ -59,10 +77,10 @@ class TransportRule(Rule):
                 the second element is a list of the classes required by the target propensity term.
             rule_name (str, optional):
           """
-          super().__init__(rule_name, [source, target])
+          assert len(propensities) == 2
+          assert len(propensity_classes) == 2
 
-          assert(len(propensities) == 2)
-          assert(len(propensity_classes) == 2)
+          super().__init__(rule_name, [source, target])
 
           source_stochiometry = np.array([-transport_amount])
           target_stochiometry = np.array([transport_amount])
@@ -77,7 +95,7 @@ class ExitEntranceRule(Rule):
   """
   def __init__(self, target:str, transport_class:str,
                 transport_amount:Union[float, int], propensity:str,
-                propensity_classes:list[str],
+                propensity_classes:Union[list[str], str],
                 rule_name:str = "EXIT/ENTRANCE RULE") -> None:
         """ A template for a transport rule for a single class between a single source compartment and a single target compartment.
         Args:
@@ -89,6 +107,7 @@ class ExitEntranceRule(Rule):
             rule_name (str, optional):
         """
         super().__init__(rule_name, [target])
-
+        if isinstance(propensity_classes, str):
+             propensity_classes = [propensity_classes]
         self.addLinearStoichiomety([0], [[transport_amount]], [[transport_class]])
         self.addSimplePropensityFunction([0], [propensity], [propensity_classes])

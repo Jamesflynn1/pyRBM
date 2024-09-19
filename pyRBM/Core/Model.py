@@ -44,7 +44,7 @@ class Model:
         self.defined_classes:Optional[list[str]] = None
 
         self.model_paths = ModelPaths()
-        
+
     def createCompartments(self) -> dict[str, dict[str, Any]]:
         """ Parse all compartments returned from the `self._create_rules_func`, perform rule validity and cohesion checks and return them in dictionary format.
         """
@@ -99,8 +99,8 @@ class Model:
         if self.contains_builtin_classes:
             additional_classes = Classes().returnBuiltInClasses()
         return returnMatchedRulesDict(self._rules_dict, self._compartments_dict, additional_classes)
-    
-    
+
+
     def buildModel(self, classes_defintions:Iterable[Iterable[str]],
                    create_rules:Callable[[], Iterable[Rule]],
                    create_compartments:Optional[Callable[[], Iterable[Compartment]]] = None,
@@ -111,8 +111,8 @@ class Model:
                    matched_rules_filename:str = "CompartmentMatchedRules",
                    classes_filename:str = "Classes",
                    metarule_filename:str = "MetaRules") -> None:
-        
-        
+
+
         self.classes_defintions = classes_defintions
         self._create_compartments_func = create_compartments
         self._create_rules_func = create_rules
@@ -128,17 +128,17 @@ class Model:
 
         if self.write_to_file:
             self.model_paths = ModelPaths(metarules_filename=metarule_filename if save_meta_rules else None,
-                                          compartments_filename=compartment_filename if self.no_compartment_model else None,
+                                          compartments_filename=compartment_filename if not self.no_compartment_model else None,
                                           matched_rules_filename=matched_rules_filename,
                                           classes_filename=classes_filename,
                                           model_folder_path_to=save_model_folder,
                                           model_name=self.model_name)
-            
+
             files_to_write = [(self._matched_rules_dict,self.model_paths.matched_rules_path, "matched rules dict"),
                               (self._classes_dict, self.model_paths.classes_path, "classes dict")]
             if self.model_paths.metarules_path is not None:
                 files_to_write.append((self._rules_dict, self.model_paths.metarules_path, "meta rule dict"))
-            
+
             if self.model_paths.compartments_path is not None:
                 files_to_write.append((self._compartments_dict, self.model_paths.compartments_path, "compartments dict"))
 
@@ -147,7 +147,7 @@ class Model:
                 self.classes_filename,self.metarule_filename = [save_model_folder,compartment_filename,
                                                                 matched_rules_filename,classes_filename,
                                                                 metarule_filename]
-            
+
             for model_dict, file_loc, dict_name in files_to_write:
                 writeDictToJSON(model_dict, file_loc, dict_name)
         else:
@@ -213,7 +213,7 @@ class Model:
 
         self.trajectory = Trajectory(self.compartments)
         self.model_state = ModelState(self.builtin_classes, datetime.datetime.now())
-        
+
         self.solver = None
         self.solver_initialized = False
         self.model_initialized = True
@@ -254,7 +254,7 @@ class Model:
                                                            "total_propensity"])
                 self.model_debug_plot = SolverDataPlotting(self)
         else:
-            raise(ValueError("Model not initialized: initialize model before solver"))
+            raise ValueError("Model not initialized: initialize model before solver")
 
     def resetSimulation(self) -> None:
         """ Resets the model to a pre-simulation state and creates a new Trajectory.
@@ -318,7 +318,7 @@ class Model:
                     self.solver_diag_data.updateData(self.solver.current_stats)
             end_perf_time = time.perf_counter()
             time_elapsed = end_perf_time-start_perf_time
-            
+
             print(f"Simulation {self.simulation_number} has finished after {self.model_state.elapsed_time} {self.model_state.time_measurement}, requiring {self.model_state.iterations} iterations and {time_elapsed} secs of compute time")
 
             self.simulation_elapsed_times.append(time_elapsed)
@@ -327,7 +327,7 @@ class Model:
                 self.solver_diag_data.saveSolverPerSimulationData()
             return self.trajectory
         else:
-            raise(ValueError("Model/solver not initialized: initialize model before the solver."))
+            raise ValueError("Model/solver not initialized: initialize model before the solver.")
 
     def printSimulationPerformanceStats(self) -> None:
         """ Prints (computational) performance statistics for the current model (since its inception).

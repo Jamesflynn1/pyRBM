@@ -16,6 +16,8 @@ class Trajectory:
                                 for compartment_index, compartment in enumerate(compartments)}
         self.compartment_names = {compartment_index:compartment.name
                                for compartment_index, compartment in enumerate(compartments)}
+        
+        #self.time_resolution = 
 
     def addEntry(self, time, compartment_values,
                  compartment_index:int) -> None:

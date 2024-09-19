@@ -10,11 +10,11 @@ class SolverDataPlotting:
         assert(model.solver.debug)
         self.fig, self.ax = plt.subplots(2,2)
 
-        self.rule_names = [str(rule)for rule in model.matched_rules_dict]
+        self.rule_names = [str(rule)for rule in model._matched_rules_dict]
       
         self.rule_index_set_names = [f"{rule}_{index}"
                                      for rule in self.rule_names 
-                                     for index in range(len(model.matched_rules_dict[rule]))]
+                                     for index in range(len(model._matched_rules_dict[rule]))]
 
         self.rule_plot = FrequencyBarChart(self.fig, self.ax[0][0],
                                            "Frequency of rule execution", "Rule Number",
