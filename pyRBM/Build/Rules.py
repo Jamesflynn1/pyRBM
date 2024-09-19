@@ -85,7 +85,7 @@ class Rule:
         res = sympy_formula.evalf(subs=subsitution_dict)
         # We require that a numerical result is outputted and no symbols are left over.
         if not isinstance(res, (sympy.core.numbers.Float, sympy.core.numbers.Zero)):
-            raise ValueError(f"Propensity function: {formula} evaluates to {res} and not a number. \nPlease check Compartment constants/classes and model classes are defined.")
+            raise ValueError(f"Propensity function: {formula} evaluates to {res} and not a number. \nPlease check Compartment constants/classes and model classes are defined. \nSymbols available for: {class_symbols}")
         return True
 
     def checkRuleDefinition(self, builtin_class_symbols:dict[str, sympy.Symbol],

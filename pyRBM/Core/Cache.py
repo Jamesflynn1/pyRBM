@@ -140,8 +140,7 @@ def loadCompartments(compartments_filename:Optional[str] = None,
 
     for comp_index in range(len(compartments_data)):
         compartment_dict = compartments_data[str(comp_index)]
-        compartment = Compartment(index=comp_index, name=compartment_dict["compartment_name"], lat=float(compartment_dict["lat"]),
-                                     long=float(compartment_dict["long"]), comp_type=compartment_dict["type"],
+        compartment = Compartment(index=comp_index, name=compartment_dict["compartment_name"], comp_type=compartment_dict["type"],
                                      label_mapping=compartment_dict["label_mapping"],
                                      initial_class_values=np.array(compartment_dict["initial_values"]),
                                      compartment_constants=compartment_dict["compartment_constants"])
