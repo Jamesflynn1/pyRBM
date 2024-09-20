@@ -70,11 +70,12 @@ class Solver:
     def performPropensityUpdates(self, update_propensity_func:Callable[[int, int, list], None]) -> None:
         if not self.last_rule_index_set is None:
             rule_prop_update_set = self.propensity_update_dict[self.last_rule_index_set]
-            changed_base_model_vars = self.model_state.returnChangedVars()
-            if not len(changed_base_model_vars) == 0:
+            changed_model_vars = self.model_state.returnChangedVars()
+            if len(changed_model_vars) > 0:
                 rule_prop_update_set = rule_prop_update_set.copy()
-                for changed_model_var in changed_base_model_vars:
-                    rule_prop_update_set.update(self.propensity_update_dict.get(changed_model_var, set()))
+                for changed_var in changed_model_vars:
+                    rule_prop_update_set.update(self.propensity_update_dict[changed_var])
+
             self.updateGivenPropensities(update_propensity_func,
                                          rule_prop_update_set)
         else:

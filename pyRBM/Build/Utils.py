@@ -30,3 +30,7 @@ def createEuclideanDistanceMatrix(lats:Sequence[Union[float, int]],
     # Fill in the lower left triangle
     distm = distm.T+distm
     return distm
+
+
+def parseVarName(class_name:str):
+    return class_name.replace(" ", "_")

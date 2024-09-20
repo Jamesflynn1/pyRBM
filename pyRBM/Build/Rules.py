@@ -7,6 +7,8 @@ import re
 import numpy as np
 import sympy
 
+from pyRBM.Build.Utils import parseVarName
+
 def isNonDefaultTargetArray(target_array:list[str]) -> bool:
     """ Checks if the provided target_array contains any non default (i.e. non None or "Any"/"any") target requirmments.
     Returns:
@@ -53,7 +55,7 @@ class Rule:
                 raise ValueError(f"Overwriting already set stoichiomety is forbidden. Target compartment {self.targets[index]} at position {str(index+1)}")
             elif isinstance(stoichiometry, (np.ndarray, list)):
                 self.stoichiometies[index] = list(stoichiometry)
-                self.stoichiometry_classes[index] = [class_str.replace(" ", "_").lower() for class_str in required_target_classes[i]]
+                self.stoichiometry_classes[index] = [parseVarName(class_str) for class_str in required_target_classes[i]]
             else:
                 raise ValueError(f"Unrecognised stoichiomety of type {type(stoichiometies[i])}, for target index {index}")
 
@@ -69,13 +71,13 @@ class Rule:
             if not isinstance(value, str):
                 raise ValueError(f"Unrecognised propensity function of type {type(values[i])}, for target index {index}")
 
-            self.propensity_classes[index] =  [class_str.replace(" ", "_").lower() for class_str in required_target_classes[i]]
+            self.propensity_classes[index] =  [parseVarName(class_str) for class_str in required_target_classes[i]]
             # If self.propensities contains a space it should error and this is checked for later.
-            self.propensities[index] = value.lower()
+            self.propensities[index] = value
 
     def validateFormula(self, formula:str, class_symbols:dict[str, sympy.Symbol],
                         safe_num:Union[float, int] = 1) -> bool:
-        # Remove slots - should check constant exists when matched to a compartment name in RuleMatching.py and not here.            
+        # Remove slots - should check constant exists when matched to a compartment name in RuleMatching.py and not here.
         formula = re.sub("slot_[0-9]+", "", formula)
         # Evaluate when all classes are 0
         sympy_formula = sympy.parse_expr(formula, local_dict=class_symbols)
@@ -89,7 +91,7 @@ class Rule:
         return True
 
     def checkRuleDefinition(self, builtin_class_symbols:dict[str, sympy.Symbol],
-                            compartments_constant_symbols:dict[str, sympy.Symbol]) -> None:
+                            compartments_constant_symbols:Optional[dict[str, sympy.Symbol]]) -> None:
         """ Perform the following validation on the rule definition:
             1. self.stoichiometies, self.propensities, self.propensity_classes are of the same length as the rule targets.
             2. each element of self.stoichiometies, self.propensities, self.propensity_classes are not None.
@@ -112,7 +114,7 @@ class Rule:
                 raise ValueError(f"Incorrect rule definition for {self.rule_name}\nThe Compartment type {self.targets[i]} at rule position {str(i+1)} has no defined propensity class requirement.")
             elif self.stoichiometry_classes[i] is None or not isinstance(self.propensity_classes[i], list):
                 raise ValueError(f"Incorrect rule definition for {self.rule_name}\nThe Compartment type {self.targets[i]} at rule position {str(i+1)} has no defined stochiometry class requirement.")
-        additional_symbols = builtin_class_symbols | compartments_constant_symbols
+        additional_symbols = builtin_class_symbols | (compartments_constant_symbols if compartments_constant_symbols is not None else {})
         for index in range(len(self.propensities)):
             if " " in self.propensities[index]:
                 raise ValueError(f"Propensity {self.propensities[index]} in rule: {self.rule_name} contains a space character.")
@@ -149,7 +151,7 @@ class Rule:
                 }
 
 class Rules:
-    def __init__(self, defined_classes:Iterable[str], compartment_constants: Iterable[str]) -> None:
+    def __init__(self, defined_classes:Iterable[str], compartment_constants: Optional[Iterable[str]]) -> None:
         self.rules:list[Rule] = []
         self.defined_classes = defined_classes
         self.model_prefix = "model_"
@@ -164,7 +166,10 @@ class Rules:
 
         self.builtin_symbols = returnSympyClassVarsDict(builtin_classes)
         # DOESN'T CHECK FOR EXISTENCE OF CONSTANTS FOR EACH LOCATION - THIS IS DONE IN THE RULE MATCHING
-        self.compartment_constants_symbols = returnSympyClassVarsDict(compartment_constants)
+        if compartment_constants is not None:
+            self.compartment_constants_symbols = returnSympyClassVarsDict(compartment_constants)
+        else:
+            self.compartment_constants_symbols = None
 
     def removeTypeRequirement(self, default_type:str = "any") -> None:
         """ Used to remove the user set (or unset) type requirements for all rules by setting to the default_type. Used for no-compartment models.
@@ -184,9 +189,12 @@ class Rules:
         else:
             raise(TypeError(f"rule is not a child type of Rule base class (type: {type(rule)})"))
 
-    def addRules(self, rules:Iterable[Rule]) -> None:
-        for rule in rules:
-            self.addRule(rule)
+    def addRules(self, rules:Union[Iterable[Rule], Rule]) -> None:
+        if isinstance(rules, Rule):
+            self.addRule(rules)
+        else:
+            for rule in rules:
+                self.addRule(rule)
 
     def _checkRules(self) -> bool:
         for rule in self.rules:

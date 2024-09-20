@@ -15,12 +15,13 @@ def _classToRuleDict(rules, compartments, matched_indices, base_classes):
                 comp_classes_num = len(compartments[comp_i].class_values)
                 comp_symbols = rule.sympy_formula[slot_i].atoms(sympy.Symbol)
                 #rtc_dict[f"{rule_i} {index_set_i}"].update([f"{str(symbol)} {comp_i}" for symbol in comp_symbols])
+                
                 for symbol in comp_symbols:
                     class_index = int(str(symbol)[1:])
                     if class_index < comp_classes_num:
-                        ctr_dict[f"{str(symbol)} {comp_i}"].update([f"{rule_i} {index_set_i}"])
+                        ctr_dict[f"{str(symbol)} {comp_i}"].add((rule_i, index_set_i))
                     else:
-                        base_ctr_dict[base_classes[comp_classes_num-class_index]].update([f"{rule_i} {index_set_i}"])
+                        base_ctr_dict[base_classes[class_index-comp_classes_num]].add((rule_i, index_set_i))
     return ctr_dict, base_ctr_dict
 
 # Use propensity infomation to determine which rules require updating based on a change in class value
@@ -43,10 +44,8 @@ def _ruleToRule(rtc_dict, ctr_dict):
 
     for rule_compartment_key in rtr_dict:
         for class_comp in rtc_dict[rule_compartment_key]:
-            rule_index = [index.split(" ")
-                          for index in ctr_dict[class_comp]]
-            rtr_dict[rule_compartment_key].update([(int(index[0]),int(index[1]))
-                                                for index in rule_index])
+            rtr_dict[rule_compartment_key].update(ctr_dict[class_comp])
+    
     return rtr_dict
 
 def returnOneStepRuleUpdates(rules, compartments,
