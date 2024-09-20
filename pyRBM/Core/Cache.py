@@ -67,6 +67,29 @@ class ModelPaths:
         else:
             return self.save_model_folder+self._metarules_filename
 
+class TrajectoryPaths:
+    def __init__(self, trajectory_path_to, model_name, batch_folders = False):
+        self.trajectory_path_to = trajectory_path_to
+        self.model_name = model_name
+        self.simulation_number = 1
+        
+        if model_name is None or trajectory_path_to is None:
+            model_name = None
+        else:
+            self.save_model_folder = f"{trajectory_path_to}{model_name}/"
+        self.batch_folders = batch_folders
+        #if batch_folders:
+        
+        #else:
+
+    @property
+    def trajectory_path(self):
+        return
+    
+    @property
+    def trajectory_folder(self):
+        return
+
 def writeDictToJSON(dict_to_write:dict, filename:str,
                     dict_name:str="") -> None:
     """ Writes dict_to_write to a json file at the filename path. Orders the json keys alphabetically and uses utf-8 encoding.
