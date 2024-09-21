@@ -11,7 +11,7 @@ class ModelState:
         self.model_prefix = "model_"
 
         self.IMPLEMENTED_MODEL_CLASSES = [f"model_{var}"
-                                          for var in ["day", "hour", "months"]]
+                                          for var in ["day", "hour", "months", "yearly_day"]]
         self.IMPLEMENTED_MODEL_CLASSES += [f"model_month_{month}"
                                            for month in self.MONTHS]
         self.model_classes:dict[str,Any] = {}
@@ -73,14 +73,14 @@ class ModelState:
         # https://docs.python.org/3/library/datetime.html#datetime.datetime.timetuple
         current_datetime_info = self.current_datetime.timetuple()
 
-        month_index = current_datetime_info[1]-1
+        month_index = current_datetime_info.tm_mon-1
         # changeModelClassValue checks for a change in value, we incurr a small performance cost in the function call at the benefit of
         # much more maintainable code.
         self.changeMonth(self.current_month, self.MONTHS[month_index], month_index)
-        self.changeModelClassValue("day", current_datetime_info[2])
-
-        rounded_hours = round(current_datetime_info[4]/60.0, 1)
-        self.changeModelClassValue("hour", current_datetime_info[3] + rounded_hours)
+        self.changeModelClassValue("day", current_datetime_info.tm_mday)
+        self.changeModelClassValue("yearly_day", current_datetime_info.tm_yday)
+        rounded_hours = round(current_datetime_info.tm_min/60.0, 1)
+        self.changeModelClassValue("hour", current_datetime_info.tm_hour + rounded_hours)
 
 
     def processUpdate(self, new_time) -> None:

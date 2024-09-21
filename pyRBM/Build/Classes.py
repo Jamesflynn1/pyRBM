@@ -22,6 +22,8 @@ class Classes:
         
     def returnBuiltInClasses(self) -> list[list[str]]:
         builtin_classes = [[f"{self.base_model_string}day",
+                            "Day of month"],
+                            [f"{self.base_model_string}yearly_day",
                             "Day of year"],
                            [f"{self.base_model_string}hour",
                             "Hour of day", "integer"],

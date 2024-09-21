@@ -13,7 +13,17 @@ class Solver:
         self.no_rules_behaviour = no_rules_behaviour
         self.default_step = 1
         self.debug = debug
+    def processNoRuleEvent(self, current_time):
+        if self.no_rules_behaviour == "end":
+            print("Finishing model simulation early.\n No rules left to trigger - all rules have 0 propensity.")
+            return
+        elif self.no_rules_behaviour == "step":
+            print(f"Stepping {self.default_step} ahead.\n No rules left to trigger - all rules have 0 propensity.")
+            if self.debug:
+                self.collectStats(None, None, 0)
 
+            return current_time + self.default_step
+    
     def initialize(self, compartments, rules,
                    matched_indices, model_state:ModelState,
                    propensity_update_dict:Optional[dict] = None) -> None:
@@ -104,15 +114,7 @@ class GillespieSolver(Solver):
         total_propensity = self.returnTotalPropensity()
 
         if total_propensity <= 0:
-            if self.no_rules_behaviour == "end":
-                print("Finishing model simulation early.\n No rules left to trigger - all rules have 0 propensity.")
-                return
-            elif self.no_rules_behaviour == "step":
-                print(f"Stepping {self.default_step} ahead.\n No rules left to trigger - all rules have 0 propensity.")
-                if self.debug:
-                    self.collectStats(None, None, 0)
-
-                return current_time + self.default_step
+            return self.processNoRuleEvent(current_time)
 
         # Generate 0 to 1
         # Random rule
@@ -126,6 +128,11 @@ class GillespieSolver(Solver):
             if cumulative_prop > u1*total_propensity:
                selected_rule_index = rule_comp_key
                break
+        # No rule has been selected as even though total_propensity is non-zero, this is
+        # likely due to numerical precision errors. 
+        if selected_rule_index is None:
+            return self.processNoRuleEvent(current_time)
+        
         # Only set the last rule used when using the caching for propensities.
         if self.use_cached_propensities:
             self.last_rule_index_set = selected_rule_index
@@ -183,12 +190,7 @@ class HKOSolver(Solver):
         total_propensity = self.returnTotalPropensity()
 
         if total_propensity <= 0:
-            if self.no_rules_behaviour == "end":
-                print("Finishing model simulation early.\n No rules left to trigger - all rules have 0 propensity.")
-                return
-            elif self.no_rules_behaviour == "step":
-                print(f"Stepping {self.default_step} ahead.\n No rules left to trigger - all rules have 0 propensity.")
-                return current_time + self.default_step
+            return self.processNoRuleEvent(current_time)
 
         # Generate 0 to 1
         # Random rule
@@ -218,6 +220,10 @@ class HKOSolver(Solver):
                         selected_index_set = int(index_set_key)
                         break
                 break
+        # See dicussion of numerical precision in the Gillespie sovler.
+        if selected_rule is None or selected_index_set is None:
+            return self.processNoRuleEvent(current_time)
+        
         # Only set the last rule used when using the caching for propensities.
         if self.use_cached_propensities:
             self.last_rule_index_set = f"{selected_rule} {selected_index_set}"
