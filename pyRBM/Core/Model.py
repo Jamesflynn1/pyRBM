@@ -338,10 +338,10 @@ class Model:
             Mean and standard deviation of the time spent in the core simulation loop per simulation.
         """
         print("\n")
-        print(f"Completed {self.simulation_number} simulations with the following stats")
-        print(f"Iterations:\n Mean: {np.mean(self.simulation_iterations)}, Std: {np.std(self.simulation_iterations)}")
-        print(f"Simulation Elapsed Time:\n Mean: {np.mean(self.simulation_elapsed_times)}, Std: {np.std(self.simulation_elapsed_times)}")
-
+        print(f"Completed {self.simulation_number} simulations with the following stats:")
+        print(f"Iterations:\n   Mean: {np.mean(self.simulation_iterations)}, Std: {np.std(self.simulation_iterations)}")
+        print(f"Simulation Elapsed Time:\n  Mean: {np.mean(self.simulation_elapsed_times)}, Std: {np.std(self.simulation_elapsed_times)}")
+    
 class SolverData:
     def __init__(self, fields:Iterable[str]) -> None:
         self.fields = fields

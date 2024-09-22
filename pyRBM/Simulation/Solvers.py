@@ -9,16 +9,16 @@ class Solver:
         self.use_cached_propensities = use_cached_propensities
 
         # Either step or exit
-        assert (no_rules_behaviour in ["step", "exit"])
+        assert (no_rules_behaviour in ["step", "end"])
         self.no_rules_behaviour = no_rules_behaviour
         self.default_step = 1
         self.debug = debug
     def processNoRuleEvent(self, current_time):
         if self.no_rules_behaviour == "end":
-            print("Finishing model simulation early.\n No rules left to trigger - all rules have 0 propensity.")
-            return
+            print("Finishing model simulation early.\nNo rules left to trigger - all rules have 0 propensity.")
+            return None
         elif self.no_rules_behaviour == "step":
-            print(f"Stepping {self.default_step} ahead.\n No rules left to trigger - all rules have 0 propensity.")
+            print(f"Stepping {self.default_step} ahead.\nNo rules left to trigger - all rules have 0 propensity.")
             if self.debug:
                 self.collectStats(None, None, 0)
 
@@ -129,7 +129,7 @@ class GillespieSolver(Solver):
                selected_rule_index = rule_comp_key
                break
         # No rule has been selected as even though total_propensity is non-zero, this is
-        # likely due to numerical precision errors. 
+        # likely due to numerical precision errors.
         if selected_rule_index is None:
             return self.processNoRuleEvent(current_time)
         
