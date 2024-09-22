@@ -1,6 +1,6 @@
 """ Generic framework to match metarules to compartments, find all compartment indices that match and rewrite the propensities and stoichiometries to use array indices.
 """
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 
@@ -134,9 +134,13 @@ def obtainStochiometry(rule:dict[str,Any], compartments:list[dict[str,Any]]) -> 
     return new_stoichiometries
 
 def returnMatchedRulesDict(rules:dict[str,dict[str,Any]], compartments:dict[str,dict[str,Any]],
-                           builtin_classes:list[list[str]]) -> dict[str, dict[str,Any]]:
+                           builtin_classes:Optional[list[list[str]]]) -> dict[str, dict[str,Any]]:
+    if builtin_classes is None:
+        builtin_classes = []
+    else:
+        builtin_classes = sorted(builtin_classes)
+
     matched_rules = returnRuleMatchingIndices(rules, compartments)
-    builtin_classes = sorted(builtin_classes)
     concrete_match_rules_dict = {}
     concrete_rules = 0
     for rule_i in range(len(matched_rules)):

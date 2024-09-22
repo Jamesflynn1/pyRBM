@@ -1,5 +1,5 @@
 # This file is used to allow
-from typing import Iterable
+from typing import Iterable, Any
 from datetime import timedelta, datetime
 
 import numpy as np
@@ -11,10 +11,11 @@ class ModelState:
         self.model_prefix = "model_"
 
         self.IMPLEMENTED_MODEL_CLASSES = [f"model_{var}"
-                                          for var in ["day", "hour", "months"]]
+                                          for var in ["day", "hour", "months", "yearly_day"]]
         self.IMPLEMENTED_MODEL_CLASSES += [f"model_month_{month}"
                                            for month in self.MONTHS]
-        self.model_classes = {}
+        self.model_classes:dict[str,Any] = {}
+        self.changed_vars = []
 
         self.time_measurement = "days"
 
@@ -22,75 +23,64 @@ class ModelState:
             if model_class in self.IMPLEMENTED_MODEL_CLASSES:
                 self.model_classes[model_class] = None
             else:
-                self.model_classes[model_class] = None
                 raise ValueError(f"Model class {model_class} not implemented")
-
+            
+        self.resetClassVars()
 
         self.elapsed_time = 0
         self.iterations = 0
         self.current_month = None
-
-        self.changed_vars = [classes for classes in self.model_classes]
-
 
         if isinstance(start_datetime, datetime):
             self.start_datetime = start_datetime
             self.current_datetime = start_datetime
         else:
             raise ValueError(f"Start date must be of type datetime not {type(start_datetime)}")
-        self._initaliseCalendarInfo()
+        self._updateCalendarInfo()
+    
+    def resetClassVars(self):
+        for model_class in self.model_classes:
+            self.changeModelClassValue(model_class[len(self.model_prefix):], 0)
+
 
     def reset(self) -> None:
+        self.changed_vars = []
         self.elapsed_time = 0
         self.iterations = 0
         self.current_datetime = self.start_datetime
-        self.changed_vars = [classes for classes in self.model_classes]
         self._updateCalendarInfo()
-
-    # Convert the self.current_datetime into model variables used
-    def _initaliseCalendarInfo(self) -> None:
-        # Initialise all indicators to zero and perform the standard update step.
-        for key in self.IMPLEMENTED_MODEL_CLASSES:
-            self.model_classes[key] = 0
-        self._updateCalendarInfo()
-
+    
+    def changeModelClassValue(self, class_name:str, new_value:Any):
+        class_name = f"{self.model_prefix}{class_name}"
+        if new_value != self.model_classes[class_name]:
+            self.model_classes[class_name] = new_value
+            self.changed_vars.append(class_name)
+    
+    def changeMonth(self, old_month, new_month, new_month_index):
+        if old_month != new_month:
+            if old_month is not None:
+                self.changeModelClassValue(f"month_{old_month}", 0)
+                self.changeModelClassValue(f"month_{new_month}", 1)
+            self.changeModelClassValue("months", new_month_index)
+            
+            self.current_month = new_month
 
     def changeDate(self, new_date:datetime) -> None:
         self.start_datetime = new_date
         self.reset()
 
     def _updateCalendarInfo(self) -> None:
-
         # https://docs.python.org/3/library/datetime.html#datetime.datetime.timetuple
         current_datetime_info = self.current_datetime.timetuple()
 
-        month_index = current_datetime_info[1]-1
-
-        if self.current_month is None:
-            self.model_classes[f"{self.model_prefix}month_{self.MONTHS[month_index]}"] = 1
-            self.model_classes[f"{self.model_prefix}months"] =  current_datetime_info[1]
-            self.current_month = self.MONTHS[month_index]
-
-        if not self.current_month == self.MONTHS[month_index]:
-            self.changed_vars.append(f"{self.model_prefix}month_{self.current_month}")
-            self.changed_vars.append(f"{self.model_prefix}month_{self.MONTHS[month_index]}")
-            self.changed_vars.append(f"{self.model_prefix}months")
-
-            self.model_classes[f"{self.model_prefix}month_{self.current_month}"] = 0
-            self.model_classes[f"{self.model_prefix}month_{self.MONTHS[month_index]}"] = 1
-            self.current_month = self.MONTHS[month_index]
-            self.model_classes[f"{self.model_prefix}months"] =  current_datetime_info[1]
-
-            # Variables that need their propensities updating
-
-        if not self.model_classes[f"{self.model_prefix}day"] == current_datetime_info[2]:
-            self.model_classes[f"{self.model_prefix}day"] = current_datetime_info[2]
-            self.changed_vars.append(f"{self.model_prefix}day")
-
-        rounded_hours = round(current_datetime_info[4]/60.0, 1)
-        if not self.model_classes[f"{self.model_prefix}hour"] == current_datetime_info[3] + rounded_hours:
-            self.model_classes[f"{self.model_prefix}hour"] = current_datetime_info[3] + rounded_hours
-            self.changed_vars.append(f"{self.model_prefix}hour")
+        month_index = current_datetime_info.tm_mon-1
+        # changeModelClassValue checks for a change in value, we incurr a small performance cost in the function call at the benefit of
+        # much more maintainable code.
+        self.changeMonth(self.current_month, self.MONTHS[month_index], month_index)
+        self.changeModelClassValue("day", current_datetime_info.tm_mday)
+        self.changeModelClassValue("yearly_day", current_datetime_info.tm_yday)
+        rounded_hours = round(current_datetime_info.tm_min/60.0, 1)
+        self.changeModelClassValue("hour", current_datetime_info.tm_hour + rounded_hours)
 
 
     def processUpdate(self, new_time) -> None:
@@ -120,7 +110,7 @@ class ModelState:
         return self.model_classes.values()
 
     def returnModelClasses(self):
-        return list(self.model_classes.values())
+        return list(self.model_classes.keys())
 
     def returnChangedVars(self) -> list[str]:
         return self.changed_vars

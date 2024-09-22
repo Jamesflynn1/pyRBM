@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 import numpy as np
 import sympy
@@ -78,16 +79,17 @@ class Rule:
         self.contains_compartment_constant = np.array(self.contains_compartment_constant)
         self.contains_slot_match_constant = np.array(self.contains_slot_match_constant)
 
-    def _subsituteConstants(self, formula_str:str, compartment_constants:dict, compartments_names:list) -> str:
+    def _subsituteConstants(self, formula_str:str, compartment_constants:Optional[dict], compartments_names:list) -> str:
         # The slot to name substitution is performed prior to constant to value substitution,
         # to allow for constant with slot_ to be formed.
         for slots_i, compartment_name in enumerate(compartments_names):
             formula_str = formula_str.replace(f"slot_{slots_i}", compartment_name)
         
         out_formula = formula_str
-        for comp_constant in compartment_constants:
-            out_formula = out_formula.replace(comp_constant,
-                                              str(compartment_constants[comp_constant]))
+        if compartment_constants is not None:
+            for comp_constant in compartment_constants:
+                out_formula = out_formula.replace(comp_constant,
+                                                str(compartment_constants[comp_constant]))
         return out_formula
 
     def _findIndices(self, rule_index_sets:list[list[int]], slot_index:int) -> list[int]:
