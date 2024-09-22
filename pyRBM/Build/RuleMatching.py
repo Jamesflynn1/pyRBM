@@ -1,6 +1,7 @@
 """ Generic framework to match metarules to compartments, find all compartment indices that match and rewrite the propensities and stoichiometries to use array indices.
 """
 from typing import Any, Optional
+import re
 
 import numpy as np
 
@@ -13,6 +14,13 @@ def isSubtypeOf(parent_type:str, child_type:str) -> bool:
     """
     # Equality for the moment
     return parent_type == child_type
+
+def replaceVarName(propensity_str, var_name, replacement):
+    # The regex matches var_name except when preceeded by any alphanumeric characters
+    # or succeded by any alphanumeric characters.
+    regex_str = fr"(?<!([A-z]|\d)){var_name}(?![A-z]|\d)"
+
+    return re.sub(regex_str, replacement, propensity_str)
 
 def returnRuleMatchingIndices(rules:dict[str,dict[str,Any]],
                               compartments:dict[str,dict[str,Any]]) -> dict[str, list[int]]:
@@ -82,12 +90,10 @@ def obtainPropensity(rule:dict[str,Any], compartments:list[dict[str,Any]], built
         new_label_mapping = compartment["label_mapping"]
         # Order: model var, compartment const, compartment class
         for built_in_i, builtin_class in enumerate(builtin_classes):
-            new_propensity = new_propensity.replace(builtin_class[0], f"x{built_in_i+len(new_label_mapping)}")
+            new_propensity = replaceVarName(new_propensity, builtin_class[0], f"x{built_in_i+len(new_label_mapping)}")
 
         for label_i in new_label_mapping:
-            new_propensity = new_propensity.replace(new_label_mapping[label_i], f"x{label_i}")
-
-        # Add the built in class at the end of the compartment classes
+            new_propensity  = replaceVarName(new_propensity, new_label_mapping[label_i], f"x{label_i}")
 
         new_propensities.append(new_propensity)
     return new_propensities
