@@ -79,11 +79,12 @@ class Rule:
         self.contains_compartment_constant = np.array(self.contains_compartment_constant)
         self.contains_slot_match_constant = np.array(self.contains_slot_match_constant)
 
-    def _subsituteConstants(self, formula_str:str, compartment_constants:Optional[dict], compartments_names:list) -> str:
+    def _subsituteConstants(self, formula_str:str, compartment_constants:Optional[dict], compartments_names:Optional[list]) -> str:
         # The slot to name substitution is performed prior to constant to value substitution,
         # to allow for constant with slot_ to be formed.
-        for slots_i, compartment_name in enumerate(compartments_names):
-            formula_str = formula_str.replace(f"slot_{slots_i}", compartment_name)
+        if compartments_names is not None:
+            for slots_i, compartment_name in enumerate(compartments_names):
+                formula_str = formula_str.replace(f"slot_{slots_i}", compartment_name)
         
         out_formula = formula_str
         if compartment_constants is not None:
