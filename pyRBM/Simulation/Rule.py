@@ -5,6 +5,7 @@ import numpy as np
 import sympy
 
 from pyRBM.Simulation.Compartment import Compartment
+from pyRBM.Core.StringUtilities import replaceVarName
 
 class Rule:
     def __init__(self, propensity:list[str],
@@ -89,8 +90,10 @@ class Rule:
         out_formula = formula_str
         if compartment_constants is not None:
             for comp_constant in compartment_constants:
-                out_formula = out_formula.replace(comp_constant,
-                                                str(compartment_constants[comp_constant]))
+                # Use replaceVarName to exactly match comp_constant.
+                out_formula = replaceVarName(out_formula, comp_constant,
+                                             str(compartment_constants[comp_constant]),
+                                             ignore_underscore = False)
         return out_formula
 
     def _findIndices(self, rule_index_sets:list[list[int]], slot_index:int) -> list[int]:

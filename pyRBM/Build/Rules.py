@@ -7,7 +7,7 @@ import re
 import numpy as np
 import sympy
 
-from pyRBM.Build.Utils import parseVarName
+from pyRBM.Core.StringUtilities import parseVarName
 
 def isNonDefaultTargetArray(target_array:list[str]) -> bool:
     """ Checks if the provided target_array contains any non default (i.e. non None or "Any"/"any") target requirmments.

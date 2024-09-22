@@ -5,6 +5,8 @@ import re
 
 import numpy as np
 
+from pyRBM.Core.StringUtilities import replaceVarName
+
 def isSubtypeOf(parent_type:str, child_type:str) -> bool:
     """ Indicates whether the "child_type" rule type is a subtype of the parent_type.
     
@@ -87,13 +89,18 @@ def obtainPropensity(rule:dict[str,Any], compartments:list[dict[str,Any]], built
     new_propensities = []
     for compartment_i, compartment in enumerate(compartments):
         new_propensity = propensities[compartment_i]
+        # The current slot systems relies on replacing the ending of a constant name at runtime.
+        # In this case we should relax the prefix/postfix _.
+        ignore_underscore = "slot_" in new_propensity
         new_label_mapping = compartment["label_mapping"]
-        # Order: model var, compartment const, compartment class
+        # Order: model var, compartment class
         for built_in_i, builtin_class in enumerate(builtin_classes):
-            new_propensity = replaceVarName(new_propensity, builtin_class[0], f"x{built_in_i+len(new_label_mapping)}")
+            new_propensity = replaceVarName(new_propensity, builtin_class[0],
+                                            f"x{built_in_i+len(new_label_mapping)}", ignore_underscore)
 
         for label_i in new_label_mapping:
-            new_propensity  = replaceVarName(new_propensity, new_label_mapping[label_i], f"x{label_i}")
+            new_propensity  = replaceVarName(new_propensity, new_label_mapping[label_i],
+                                             f"x{label_i}", ignore_underscore)
 
         new_propensities.append(new_propensity)
     return new_propensities

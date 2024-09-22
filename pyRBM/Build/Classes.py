@@ -1,4 +1,4 @@
-from pyRBM.Build.Utils import parseVarName
+from pyRBM.Core.StringUtilities import parseVarName
 
 class Classes:
     def __init__(self, allow_base_model_classes:bool = True):
