@@ -17,7 +17,7 @@ pyRBM features:
 - "Rule Matching" - define a rule (a "Meta Rule") and the location types that can satisfy the rule. The "Rule Matching" algorithm will find all combinations of locations that match the rule ("Index Sets").
 The Meta Rule together with the Index Set, form a subrule ("Matched Rule" within the code). This massively simplifies the creation of large models.
 
-The framework is in pre-alpha development and components are lightly tested - use of the framework is at the users risk. 
+The framework is in pre-alpha development and components are lightly tested - use of the framework is at the users risk (please see license conditions).
 
 Feedback and suggestions are welcome (either create an issue or start a discussion).
 
@@ -59,7 +59,5 @@ Feedback and suggestions are welcome (either create an issue or start a discussi
 ### Trajectory:
 - Store the values of all user defined compartments, partitioned by location - stores a data point before and after a change in value only.
 - Basic matplotlib plot of values at a location.
-
-# Known issues:
-- Model state variables don't trigger a recomputation of propensities when propensity_caching = True.
-- Executing simulate twice leads to an error, reinitialising the solver before second execution fixes it for now!
+### Known Issues:
+There are no known issues with the framework, if any issues are encountered, please raise an issue or reach out to me at jameswflynn@hotmail.co.uk.
