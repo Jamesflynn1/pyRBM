@@ -21,7 +21,7 @@ def haversine(lon1:Union[float, int], lat1:Union[float, int],
     return km
 
 def createEuclideanDistanceMatrix(lats:Sequence[Union[float, int]],
-                                  longs:Sequence[Union[float, int]]) -> np.ndarray[Any]:
+                                  longs:Sequence[Union[float, int]]) -> np.ndarray:
     # Only need to find the upper right triangle.
     distm = np.zeros((len(lats), len(lats)))
     for i in range(len(lats)):
@@ -30,3 +30,17 @@ def createEuclideanDistanceMatrix(lats:Sequence[Union[float, int]],
     # Fill in the lower left triangle
     distm = distm.T+distm
     return distm
+
+def createArgsDict(default_values_dict, user_provided_dict):
+    if user_provided_dict is None:
+        if default_values_dict is None:
+            raise ValueError("Please provide either a default_values_dict and/or a user_provided_dict")
+        else:
+            return default_values_dict
+    elif default_values_dict is None:
+        return user_provided_dict
+    else:
+        for key in default_values_dict:
+            if not key in user_provided_dict:
+                user_provided_dict[key] = default_values_dict[key]
+        return default_values_dict

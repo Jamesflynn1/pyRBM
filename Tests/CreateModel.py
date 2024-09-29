@@ -36,7 +36,7 @@ crops = ["Wheat", "Cereals", "Barley", "Potatoes"]
 for crop in crops:
     supplyChainClasses +=  [[f"Seeds_{crop}", "Tonnes"], [f"Planted_{crop}", "Hectacres"], [f"Growing_{crop}", "Hectacres"], [f"Viable_{crop}", "Tonnes"], [f"Harvested_{crop}", "Tonnes"]]
 
-def returnCropRules():
+def returnCropRules(args):
     rules = []
 
     # Crop rules
@@ -73,7 +73,7 @@ def returnCropRules():
     transport_rule = BasicRules.TransportRule("FarmRegion", "FarmRegion", "Harvested_Wheat", ["comp_distance_slot_1*Harvested_Wheat/100000","1"],
                                               10, [["Harvested_Wheat"],["Harvested_Wheat"]], "Example Transport ")
     return rules + [transport_rule]
-def supplyChainLocations():
+def supplyChainLocations(args):
     # Billingham terminal - Produces Ammonium nitrate from Ammonia
     # https://www.cfindustries.com/newsroom/2023/billingham-ammonia-plant
     # https://www.cfindustries.com/what-we-do/fertilizer

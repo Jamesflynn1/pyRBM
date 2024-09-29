@@ -48,6 +48,7 @@ class Rule:
         self.propensities:          dict[int, Optional[Any]] = {i:None for i in target_indices}
         self.stoichiometry_classes: dict[int, Optional[list[str]]] = {i:None for i in target_indices}
         self.propensity_classes:    dict[int, Optional[list[str]]] = {i:None for i in target_indices}
+        self.wait_time_distrib:     Optional[str] = None
 
     def addLinearStoichiomety(self, target_indices:list[int], stoichiometies,
                               required_target_classes:list[list[str]]) -> None:
@@ -77,7 +78,14 @@ class Rule:
             self.propensity_classes[index] =  [parseVarName(class_str) for class_str in required_target_classes[i]]
             # If self.propensities contains a space it should error and this is checked for later.
             self.propensities[index] = value.replace(" ", "")
-
+    
+    def addWaitTimeDistribution(self, wait_time_distrib_name:str):
+        wait_time_distribs = returnDistribFunctions()
+        if wait_time_distrib_name in wait_time_distribs:
+            self.wait_time_distrib = wait_time_distrib_name
+        else:
+            raise ValueError(f"Wait time distribution function: {wait_time_distrib_name} not recognised\nPlease select from {wait_time_distribs.keys()}")
+    
     def validateFormula(self, formula:str, class_symbols:dict[str, sympy.Symbol],
                         safe_num:Union[float, int] = 1) -> bool:
         # Remove slots - should check constant exists when matched to a compartment name in RuleMatching.py and not here.
@@ -155,7 +163,8 @@ class Rule:
                 "target_types":self.targets,
                 "required_classes":self.rule_classes,
                 "stoichiometries":self.stoichiometies,
-                "propensities":self.propensities
+                "propensities":self.propensities,
+                "wait_time_distribution":self.wait_time_distrib if self.wait_time_distrib is not None else "Default"
                 }
 
 class Rules:
