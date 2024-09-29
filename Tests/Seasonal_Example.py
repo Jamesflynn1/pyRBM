@@ -27,7 +27,7 @@ class ExampleCompartment(Compartments.Compartment):
                                    })
 
 
-def exampleRules():
+def exampleRules(args):
     seasonal_production_1 = BasicRules.SingleLocationProductionRule("Comp",
                                                         "Source_Var_1", 1,
                                                         "Target_Var_1", 1,
@@ -40,7 +40,7 @@ def exampleRules():
                                                     "Seasonal Source to Target Production")
     return  (seasonal_production_1, seasonal_production_2)
 
-def exampleCompartments():
+def exampleCompartments(args):
     single_comp = ExampleCompartment("Example_Name")
     return single_comp
 

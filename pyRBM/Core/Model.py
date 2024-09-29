@@ -45,13 +45,16 @@ class Model:
 
         self.model_paths = ModelPaths()
 
-    def createCompartments(self) -> dict[str, dict[str, Any]]:
+        self.model_initialized = False
+        self.solver_initialized = False
+
+    def createCompartments(self, compartment_constants) -> dict[str, dict[str, Any]]:
         """ Parse all compartments returned from the `self._create_rules_func`, perform rule validity and cohesion checks and return them in dictionary format.
         """
         all_compartments = Compartments(self.defined_classes, self._distance_func)
         compartments_list = None
         if not self._create_compartments_func is None:
-            compartments_list = self._create_compartments_func()
+            compartments_list = self._create_compartments_func(compartment_constants)
             self.no_compartment_model = False
         else:
             compartments_list = [returnDefaultCompartment(self.classes_defintions)]
@@ -65,13 +68,13 @@ class Model:
 
         return compartments_dict
 
-    def createRules(self) -> dict[str, dict[str, Any]]:
+    def createRules(self, rule_constants) -> dict[str, dict[str, Any]]:
         # Use np.identity(len()) .... for no change
         """ Parse all rules returned from the `self._create_rules_func`, perform rule validity/cohesion checks and return the rules in dictionary format.
         Ret
         """
         all_rules = Rules(self.defined_classes, self.compartment_constants)
-        rules = self._create_rules_func()
+        rules = self._create_rules_func(rule_constants)
         all_rules.addRules(rules)
         if self.no_compartment_model:
             all_rules.removeTypeRequirement()
@@ -100,11 +103,12 @@ class Model:
             additional_classes = Classes().returnBuiltInClasses()
         return returnMatchedRulesDict(self._rules_dict, self._compartments_dict, additional_classes)
 
-
     def buildModel(self, classes_defintions:Iterable[Iterable[str]],
                    create_rules:Callable[[], Iterable[Rule]],
                    create_compartments:Optional[Callable[[], Iterable[Compartment]]] = None,
                    distance_func:Optional[Callable] = createEuclideanDistanceMatrix,
+                   compartment_constants:Optional[dict[str,Any]] = None,
+                   rule_constants:Optional[dict[str,Any]] = None,
                    write_to_file:bool = False, save_meta_rules:bool = False,
                    save_model_folder:str = "/ModelFiles/",
                    compartment_filename:str = "Compartments",
@@ -119,9 +123,12 @@ class Model:
         self._distance_func = distance_func
         self.save_model_folder = save_model_folder
 
+        self._compartment_constants = compartment_constants if compartment_constants is not None else {}
+        self._rule_constants = rule_constants  if rule_constants is not None else {}
+
         self._classes_dict = self.defineClasses()
-        self._compartments_dict = self.createCompartments()
-        self._rules_dict = self.createRules()
+        self._compartments_dict = self.createCompartments(self._compartment_constants)
+        self._rules_dict = self.createRules(self._rule_constants)
         self._matched_rules_dict = self.matchRules()
 
         self.write_to_file = write_to_file
