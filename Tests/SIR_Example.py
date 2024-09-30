@@ -66,13 +66,13 @@ start_date = datetime.datetime(2001, 8, 1)
 # Close the matplotlib window to continue to the next simulation
 model.simulate(start_date, 40, 100000)
 model.trajectory.plotAllClassesOverTime(0)
+print(model.trajectory.trajectory_compartment_values[0][-1])
 model.simulate(start_date, 40, 100000)
 model.trajectory.plotAllClassesOverTime(0)
 model.simulate(start_date, 40, 100000)
 model.trajectory.plotAllClassesOverTime(0)
 model.simulate(start_date, 40, 100000)
 model.trajectory.plotAllClassesOverTime(0)
-
 
 model.printSimulationPerformanceStats()
 model.trajectory.plotAllClassesOverTime(0)
