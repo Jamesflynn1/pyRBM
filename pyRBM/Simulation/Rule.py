@@ -135,7 +135,8 @@ class Rule:
     # We expect pure Gillespie to have 0 propensity for negative rule changes, however with Tau leaping we may need
     # to check whether a series of rule changes leads to negative values.
     def triggerAttemptedRuleChange(self, compartments,
-                                   times_triggered:int = 1) -> bool:
+                                   times_triggered:int = 1,
+                                   allow_negative:bool = True) -> bool:
         assert len(compartments) == len(self.stoichiometry)
         negative_vals = False
         new_class_values = []
@@ -143,8 +144,7 @@ class Rule:
         for comp_i, compartment in enumerate(compartments):
             new_compartment_values = self._compartmentAttemptedCompartmentChange(compartment.class_values,
                                                                            comp_i, times_triggered)
-            # CHANGE TODO
-            if np.any(new_compartment_values<-20):
+            if not allow_negative and np.any(new_compartment_values<0):
                 negative_vals = True
                 break
             else:

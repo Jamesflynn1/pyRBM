@@ -268,11 +268,13 @@ class LaplaceGillespieSolver(GillespieSolver):
         self.propensities[f"{rule_i} {index_set_i}"] = new_rate
 
 class TauLeapSolver(Solver):
-    # TODO add negative value guard.
     def __init__(self, time_step:float, use_cached_propensities:bool = False,
-                 no_rules_behaviour:str = "step", debug:bool = True) -> None:
+                 no_rules_behaviour:str = "step", debug:bool = True, negative_behaviour:str = "redraw") -> None:
         
         super().__init__(use_cached_propensities, no_rules_behaviour, debug, default_time_step=time_step)
+        assert negative_behaviour in ["redraw", "ignore"]
+        self.allow_negative = negative_behaviour == "ignore"
+
         # Use standard updateGivenPropensity derived from Solver class.
         self.update_propensity_function = self.updateGivenPropensity
         self.time_step = time_step
@@ -288,17 +290,18 @@ class TauLeapSolver(Solver):
             return self.processNoRuleEvent(current_time)
 
         for rule_comp_key, rule_comp_propensity in self.propensities.items():
+            negative_valued = True
+            while negative_valued:
+                times_triggered = self._random_source.poisson(lam=rule_comp_propensity*self.time_step)
+                selected_rule, selected_compartments = rule_comp_key.split(" ")
 
-            times_triggered = self._random_source.poisson(lam=rule_comp_propensity*self.time_step)
-            selected_rule, selected_compartments = rule_comp_key.split(" ")
-
-            if times_triggered > 0:
-                self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
+                if times_triggered > 0:
+                    negative_valued = not self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
                                                                                   self.matched_indices[int(selected_rule)]
-                                                                                  [int(selected_compartments)]), times_triggered)
-                if self.use_cached_propensities:
-                    self.last_rule_index_set.append(rule_comp_key)
-                # Not collecting times_triggered here (should be!)
-                if self.debug:
-                    self.collectStats(int(selected_rule), int(selected_compartments), total_propensity)
+                                                                                  [int(selected_compartments)]), times_triggered, self.allow_negative)
+                    if self.use_cached_propensities:
+                        self.last_rule_index_set.append(rule_comp_key)
+                    # Not collecting times_triggered here (should be!)
+                    if self.debug:
+                        self.collectStats(int(selected_rule), int(selected_compartments), total_propensity)
         return current_time + self.time_step
