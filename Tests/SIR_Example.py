@@ -57,27 +57,26 @@ model = Model.Model("Basic Epi Model")
 model.buildModel(epiClasses, epiRules, epiLocations, write_to_file = True, save_model_folder="Tests/ModelFiles/")
 # Use no_rules_behaviour = "exit" when the model is constructed  such that states where the model has zero propensity are all
 # absorbing states (e.g. models with no time based model state variables in any propensity).
-model_solver = Solvers.TauLeapSolver(2, debug=True, no_rules_behaviour="step", negative_behaviour="redraw")
+model_solver = Solvers.GillespieSolver(debug=True, no_rules_behaviour="end")
+
 model.initializeSolver(model_solver)
 
 start_date = datetime.datetime(2001, 8, 1)
-
 
 # Close the matplotlib window to continue to the next simulation
 model.simulate(start_date, 40, 100000)
 model.trajectory.plotAllClassesOverTime(0)
 print(model.trajectory.trajectory_compartment_values[0][-1])
 model.simulate(start_date, 40, 100000)
-print(model.trajectory.trajectory_compartment_values[0][-1])
+model.trajectory.plotAllClassesOverTime(0)
+model.simulate(start_date, 40, 100000)
+model.trajectory.plotAllClassesOverTime(0)
+model.simulate(start_date, 40, 100000)
+model.trajectory.plotAllClassesOverTime(0)
 
 model.trajectory.plotAllClassesOverTime(0)
 model.simulate(start_date, 40, 100000)
 print(model.trajectory.trajectory_compartment_values[0][-1])
 
+model.printSimulationPerformanceStats()
 model.trajectory.plotAllClassesOverTime(0)
-model.simulate(start_date, 40, 100000)
-print(model.trajectory.trajectory_compartment_values[0][-1])
-
-model.trajectory.plotAllClassesOverTime(0)
-model.simulate(start_date, 40, 100000)
-print(model.trajectory.trajectory_compartment_values[0][-1])

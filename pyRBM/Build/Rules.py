@@ -8,7 +8,6 @@ import numpy as np
 import sympy
 
 from pyRBM.Core.StringUtilities import parseVarName
-#from pyRBM.Simulation.WaitTimeDistributions import returnDistribFunctions
 
 def isNonDefaultTargetArray(target_array:list[str]) -> bool:
     """ Checks if the provided target_array contains any non default (i.e. non None or "Any"/"any") target requirmments.
