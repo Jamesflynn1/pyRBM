@@ -274,7 +274,7 @@ class TauLeapSolver(Solver):
         super().__init__(use_cached_propensities, no_rules_behaviour, debug, default_time_step=time_step)
         assert negative_behaviour in ["redraw", "ignore"]
         self.allow_negative = negative_behaviour == "ignore"
-
+ 
         # Use standard updateGivenPropensity derived from Solver class.
         self.update_propensity_function = self.updateGivenPropensity
         self.time_step = time_step
