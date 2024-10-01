@@ -6,3 +6,4 @@ pyRBM==0.0.2
 numpy==2.1.1
 sympy==1.13.2
 matplotlib==3.9.2
+indexed-priority-queue==0.1.0

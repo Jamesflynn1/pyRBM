@@ -3,7 +3,8 @@ requires = [
         "hatchling", 
         "numpy",
         "sympy",
-        "matplotlib"
+        "matplotlib",
+        "indexed-priority-queue"
 ]
 build-backend = "hatchling.build"
 
