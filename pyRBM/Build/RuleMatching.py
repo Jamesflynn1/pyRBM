@@ -17,13 +17,6 @@ def isSubtypeOf(parent_type:str, child_type:str) -> bool:
     # Equality for the moment
     return parent_type == child_type
 
-def replaceVarName(propensity_str, var_name, replacement):
-    # The regex matches var_name except when preceeded by any alphanumeric characters
-    # or succeded by any alphanumeric characters.
-    regex_str = fr"(?<!([A-z]|\d)){var_name}(?![A-z]|\d)"
-
-    return re.sub(regex_str, replacement, propensity_str)
-
 def returnRuleMatchingIndices(rules:dict[str,dict[str,Any]],
                               compartments:dict[str,dict[str,Any]]) -> dict[str, list[int]]:
     # For each rule, on each type that matches a general type
