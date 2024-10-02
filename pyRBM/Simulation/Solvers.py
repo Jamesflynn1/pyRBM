@@ -291,6 +291,7 @@ class GillespieNRMSolver(Solver):
         if self.debug:
             self.collectStats(int(selected_rule), int(selected_compartments), 0)
         return new_time
+
 class HKOSolver(Solver):
     def __init__(self, use_cached_propensities:bool = True,
                  no_rules_behaviour:str = "step",
@@ -339,6 +340,10 @@ class HKOSolver(Solver):
 
         if total_propensity <= 0:
             return self.processNoRuleEvent(current_time)
+        
+        self.last_rule_index_set = []
+
+        self.last_rule_index_set = []
 
         self.last_rule_index_set = []
 
@@ -393,6 +398,7 @@ class LaplaceGillespieSolver(GillespieSolver):
         super().__init__(True, no_rules_behaviour, debug)
 
         self.wait_time_distribs = returnDistribFunctions()
+
 
         self.update_propensity_function = self.updateLaplacePropensity
 
