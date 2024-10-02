@@ -6,13 +6,13 @@ import sympy
 
 from pyRBM.Simulation.Compartment import Compartment
 from pyRBM.Core.StringUtilities import replaceVarName
-
+#from pyRBM.Simulation.WaitTimeDistributions import processDistribFunction
 class Rule:
     def __init__(self, propensity:list[str],
                  stoichiometry:list[np.ndarray],
                  rule_name:str, num_builtin_classes:int,
                  compartments:list[Compartment],
-                 rule_index_sets:list[list[int]]) -> None:
+                 rule_index_sets:list[list[int]], event_time_distrib_and_args:str = None) -> None:
 
         assert len(stoichiometry) == len(propensity)
         compartment_names = [compartment.name for compartment in compartments]
@@ -80,6 +80,7 @@ class Rule:
         self.contains_compartment_constant = np.array(self.contains_compartment_constant)
         self.contains_slot_match_constant = np.array(self.contains_slot_match_constant)
 
+        #processDistribFunction(random_source ,event_time_distrib_and_args)
     def _subsituteConstants(self, formula_str:str, compartment_constants:Optional[dict], compartments_names:Optional[list]) -> str:
         # The slot to name substitution is performed prior to constant to value substitution,
         # to allow for constant with slot_ to be formed.
@@ -109,7 +110,10 @@ class Rule:
         new_values = class_values + times_triggered*self.stoichiometry[compartment_index]
 
         return new_values
-
+    def returnEventRate(self, random_source):
+        # TODO
+        return
+    
     def returnPropensity(self, compartments, builtin_classes, index_set_i):
         assert(len(compartments) == len(self.stoichiometry))
         # Assume product operation.
