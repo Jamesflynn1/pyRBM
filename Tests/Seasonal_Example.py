@@ -46,14 +46,12 @@ def exampleCompartments(args):
 
 model = Model.Model("Basic Epi Model")
 model.buildModel(model_classes, exampleRules, exampleCompartments, write_to_file = True, save_model_folder="Tests/ModelFiles/")
-model_solver = Solvers.HKOSolver(debug=True)
+model_solver = Solvers.GillespieSolver(debug=True)
 model.initializeSolver(model_solver)
 
 start_date = datetime.datetime(2001, 1, 1)
-
-model.simulate(start_date, 365*2, 10000)
-model.simulate(start_date, 365*2, 10000)
-model.simulate(start_date, 365*2, 10000)
+for x in range(1000):
+    model.simulate(start_date, 365*2, 10000)
 
 print(model.model_state.model_classes)
 
