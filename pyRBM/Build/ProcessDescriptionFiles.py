@@ -3,6 +3,7 @@
 import inspect
 
 from pyRBM.Core.Cache import readDictFromJSON
+
 class LoadedCompartments:
     def __init__(self, compartment_type_dict):
         self._compartments = []

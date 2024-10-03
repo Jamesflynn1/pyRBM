@@ -8,7 +8,8 @@ from pyRBM.Simulation.State import ModelState
 
 class Solver:
     def __init__(self, use_cached_propensities:bool = True,
-                 no_rules_behaviour:str = "step", debug:bool = True, random_generator=None, default_time_step=1) -> None:
+                 no_rules_behaviour:str = "step", debug:bool = True,
+                 random_generator=None, default_time_step=1) -> None:
         self.use_cached_propensities = use_cached_propensities
 
         # Either step or exit
@@ -133,7 +134,7 @@ class GillespieSolver(Solver):
         # Generate 0 to 1
         # Random rule
         u1, r2 = self._random_source.random(2)
-        u2 = -np.log(r2)*(1/total_propensity)
+        u2 = (-np.log(r2))/total_propensity
         # Random time
         cumulative_prop = 0
         selected_rule_index = None
@@ -173,14 +174,14 @@ class GillespieFRMSolver(Solver):
         # List of the rule/subrule pair that is triggered during this step.
         self.last_rule_index_set = []
         # Generate a random number for each subrule, this will be used to calculate the next event time
-        r_i = np.log(1/self._random_source.random(len(self.propensities)))
+        r_i = -np.log(self._random_source.random(len(self.propensities)))
 
         min_time = None
         min_rule_index = None
         # Calculate the next event time and save the minimum event time and the rule/subrule index set that has that minimum time.
         for index, (rule_comp_key, rule_comp_propensity) in enumerate(self.propensities.items()):
             if rule_comp_propensity > 0:
-                time = r_i[index]*1/rule_comp_propensity
+                time = r_i[index]/rule_comp_propensity
                 # If this is the first iteration, set the min_time = time, otherwise if time < min_time, update it.
                 if min_time is None or time < min_time:
                     min_time = time
@@ -228,23 +229,36 @@ class GillespieNRMSolver(Solver):
 
     def updateGivenPropensityNRM(self, rule_i:int, index_set_i:int,
                               model_state_values:list) -> None:
+        rule_index_string = f"{rule_i} {index_set_i}"
         rule = self.rules[rule_i]
         new_propensity = rule.returnPropensity(np.take(self.compartments,
                                                        self.matched_indices[rule_i][index_set_i]),
                                                        model_state_values, index_set_i)
-        self.propensities[f"{rule_i} {index_set_i}"] = new_propensity
-
-    def updateTime(self, rule_i, index_set_i, random_var):
-        rule_comp_propensity = self.propensities[f"{rule_i} {index_set_i}"]
-        # If the propensity is zero don't save the time in the tree.
-        if rule_comp_propensity > 0:
-            # Compute the new time by t + tau and save this rather than tau as in the FRM.
-            time = self.current_time + (1/self.propensities[f"{rule_i} {index_set_i}"])*random_var
+        if new_propensity > 0:
             time_key = (rule_i, index_set_i)
-            if time_key in self.times:
+            # If the rule has been triggered in the prior iteration.
+            key_missing = False
+            try:
+                old_time = self.times.priority(time_key)
+            except KeyError:
+                key_missing = True
+            time = None
+
+            if rule_index_string in self.last_rule_index_set or key_missing:
+            # Compute the new time by t + tau and save this rather than tau as in the FRM.
+                time = self.current_time + ((-np.log(self._random_source.random(1)[0]))/new_propensity)
+            else:
+                old_propensity = self.propensities[rule_index_string]
+                time = self.current_time + (old_propensity/new_propensity)*(old_time-self.current_time)
+
+            if not key_missing:
                 self.times.update((rule_i, index_set_i), new_priority=time)
             else:
                 self.times.push((rule_i, index_set_i), priority=time)
+
+        
+        self.propensities[rule_index_string] = new_propensity
+
 
         # Reduce the storage size, will need to check pq size though.
         #else:
@@ -256,20 +270,13 @@ class GillespieNRMSolver(Solver):
         # Only change is self.updateTime calls and the computation of r_i for new times.
         model_state_values = list(self.model_state.returnModelClassesValues())
 
-        new_times_size = len(self.propensities) if rules_and_matched_indices is None else len(rules_and_matched_indices)
-        r_i = np.log(1/self._random_source.random(new_times_size))
-
         if rules_and_matched_indices is None:
-            index = 0
             for rule_i in range(len(self.matched_indices)):
                 for index_set_i in range(len(self.matched_indices[rule_i])):
                     update_propensity_func(rule_i, index_set_i, model_state_values)
-                    self.updateTime(rule_i, index_set_i, r_i[index])
-                    index += 1
         else:
-            for index_i, (rule_i, index_set_i) in enumerate(rules_and_matched_indices):
+            for rule_i, index_set_i in rules_and_matched_indices:
                 update_propensity_func(rule_i, index_set_i, model_state_values)
-                self.updateTime(rule_i, index_set_i, r_i[index_i])
     @override
     def simulateOneStep(self, current_time):
         self.current_time = current_time
