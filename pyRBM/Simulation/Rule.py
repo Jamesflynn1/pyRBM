@@ -110,6 +110,7 @@ class Rule:
         new_values = class_values + times_triggered*self.stoichiometry[compartment_index]
 
         return new_values
+        
     def returnEventRate(self, random_source):
         # TODO
         return
@@ -157,4 +158,6 @@ class Rule:
             for comp_i, compartment in enumerate(compartments):
                 compartment.updateCompartmentValues(new_class_values[comp_i])
         return not negative_vals
-        
+    
+    def partial_evaluation(self, compartments):
+        return
