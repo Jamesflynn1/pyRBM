@@ -3,6 +3,7 @@ from typing_extensions import override
 
 import indexed_priority_queue
 import numpy as np
+import sympy
 from pyRBM.Simulation.State import ModelState
 #from pyRBM.Simulation.WaitTimeDistributions import returnDistribFunctions
 
@@ -19,6 +20,15 @@ class Solver:
         self.debug = debug
         self._random_source = np.random.default_rng(random_generator)
     
+    def hasFutureNonZeroPropensity(self, rules_to_check):
+
+        for rule_index in rules_to_check:
+            rule, index_set = rule_index.split(" ")
+            partial_evaluation = self.rules[int(rule)].partial_evaluation(self.matched_indices[int(index_set)])
+            if isinstance(partial_evaluation, (sympy.core.numbers.Float, sympy.core.numbers.Zero)):
+                return True
+        return False
+
     def processNoRuleEvent(self, current_time):
         if self.no_rules_behaviour == "end":
             print("Finishing model simulation early.\nNo rules left to trigger - all rules have 0 propensity.")
@@ -27,8 +37,21 @@ class Solver:
             print(f"Stepping {self.default_step} ahead.\nNo rules left to trigger - all rules have 0 propensity.")
             if self.debug:
                 self.collectStats(None, None, 0)
-
             return current_time + self.default_step
+        
+        # Only the model state variables change, if we partially evaluate
+        elif self.no_rules_behaviour == "analyse":
+            rules_to_check = set()
+            for key in self.propensity_update_dict:
+                if "model_" in key:
+                    rules_to_check.update(self.propensity_update_dict[key])
+            if self.hasFutureNonZeroPropensity(rules_to_check):
+                self.collectStats(None, None, 0)
+                self.continue_prior_step = True
+                return current_time + self.default_step
+            else:
+                print("Finishing model simulation early.\nNo rules left to trigger - all rules have 0 propensity.")
+                return None
     
     def initialize(self, compartments, rules,
                    matched_indices, model_state:ModelState,
@@ -37,10 +60,12 @@ class Solver:
         self.rules = rules
         self.matched_indices = matched_indices
         self.model_state = model_state
-
         # Read as propensity_update_dict if not None, otherwise a blank dictionary, avoids mutable default value
+        if self.no_rules_behaviour == "analyse" and propensity_update_dict is None:
+            raise ValueError("Please provide the propensity_update_dict to use self.no_rules_behaviour == 'analyse'")
+        if self.no_rules_behaviour:
+            self.continue_prior_step = False
         self.propensity_update_dict = propensity_update_dict if propensity_update_dict is not None else {}
-
 
         self.reset()
 
@@ -55,8 +80,20 @@ class Solver:
             self.current_stats = {}
 
     def simulateOneStep(self):
-        raise(TypeError("Abstract class Solver, please use a concrete implementation."))
-
+        raise(NotImplementedError("Abstract class Solver, please use a concrete implementation."))
+    
+    def postSimulationActions(self, selected_rule, selected_index_set, total_propensity):
+        if self.debug:
+            self.collectStats(int(selected_rule),
+                              int(selected_index_set),
+                              total_propensity)
+        if self.use_cached_propensities:
+            self.last_rule_index_set.append(f"{selected_rule} {selected_index_set}")
+        # We have successfully triggered a rule, we should not assume that we are not in an absorbing state anymore
+        # and rerun the analysis step again.
+        if self.no_rules_behaviour == "analyse":
+            self.continue_prior_step = False
+            
     # rules_and_matched_indices is used to determine which propensities to recompute, if None is provided this is all propensities.
     # returns total propensity
 
@@ -99,6 +136,9 @@ class Solver:
                                          rule_prop_update_set)
         else:
             self.updateGivenPropensities(update_propensity_func)
+        # List of the rule/subrule pair that is triggered during this step.
+        self.last_rule_index_set = []
+
 
     def collectStats(self, rule:int, index_set:int, total_propensity) -> None:
         assert(self.debug)
@@ -130,7 +170,6 @@ class GillespieSolver(Solver):
         if total_propensity <= 0:
             return self.processNoRuleEvent(current_time)
         
-        self.last_rule_index_set = []
         # Generate 0 to 1
         # Random rule
         u1, r2 = self._random_source.random(2)
@@ -148,15 +187,13 @@ class GillespieSolver(Solver):
         if selected_rule_index is None:
             return self.processNoRuleEvent(current_time)
 
-        # Only set the last rule used when using the caching for propensities.
-        if self.use_cached_propensities:
-            self.last_rule_index_set.append(selected_rule_index)
         selected_rule, selected_compartments = selected_rule_index.split(" ")
-        assert (self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
+        assert self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
                                                                                   self.matched_indices[int(selected_rule)]
-                                                                                  [int(selected_compartments)])))
-        if self.debug:
-            self.collectStats(int(selected_rule), int(selected_compartments), total_propensity)
+                                                                                  [int(selected_compartments)]))
+        
+        self.postSimulationActions(int(selected_rule), int(selected_compartments), total_propensity)
+
         return current_time + u2
 
 class GillespieFRMSolver(Solver):
@@ -171,8 +208,6 @@ class GillespieFRMSolver(Solver):
     def simulateOneStep(self, current_time):
         self.performPropensityUpdates(self.update_propensity_function)
 
-        # List of the rule/subrule pair that is triggered during this step.
-        self.last_rule_index_set = []
         # Generate a random number for each subrule, this will be used to calculate the next event time
         r_i = -np.log(self._random_source.random(len(self.propensities)))
 
@@ -192,15 +227,12 @@ class GillespieFRMSolver(Solver):
         if min_rule_index is None:
             return self.processNoRuleEvent(current_time)
 
-        # Only set the last rule used when using the caching for propensities.
-        if self.use_cached_propensities:
-            self.last_rule_index_set.append(min_rule_index)
         selected_rule, selected_compartments = min_rule_index.split(" ")
         assert (self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
                                                                                   self.matched_indices[int(selected_rule)]
                                                                                   [int(selected_compartments)])))
-        if self.debug:
-            self.collectStats(int(selected_rule), int(selected_compartments), 0)
+        
+        self.postSimulationActions(int(selected_rule), int(selected_compartments), 0)
         return current_time + min_time
 
 class GillespieNRMSolver(Solver):
@@ -283,20 +315,16 @@ class GillespieNRMSolver(Solver):
         self.performPropensityUpdates(self.update_propensity_function)
 
         # List of the rule/subrule pair that is triggered during this step.
-        self.last_rule_index_set = []
         try:
             (selected_rule,selected_compartments), new_time  = self.times.pop()
         except IndexError:
             return self.processNoRuleEvent(current_time)
 
-        # Only set the last rule used when using the caching for propensities.
-        if self.use_cached_propensities:
-            self.last_rule_index_set.append(f"{selected_rule} {selected_compartments}")
-        assert (self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
+        assert self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
                                                                                   self.matched_indices[int(selected_rule)]
-                                                                                  [int(selected_compartments)])))
-        if self.debug:
-            self.collectStats(int(selected_rule), int(selected_compartments), 0)
+                                                                                  [int(selected_compartments)]))
+        
+        self.postSimulationActions(int(selected_rule), int(selected_compartments), 0)
         return new_time
 
 class HKOSolver(Solver):
@@ -347,13 +375,6 @@ class HKOSolver(Solver):
 
         if total_propensity <= 0:
             return self.processNoRuleEvent(current_time)
-        
-        self.last_rule_index_set = []
-
-        self.last_rule_index_set = []
-
-        self.last_rule_index_set = []
-
         # Generate 0 to 1
         # Random rule
         u1, r2 = self._random_source.random(2)
@@ -385,19 +406,13 @@ class HKOSolver(Solver):
         # See dicussion of numerical precision in the Gillespie sovler.
         if selected_rule is None or selected_index_set is None:
             return self.processNoRuleEvent(current_time)
-        
-        # Only set the last rule used when using the caching for propensities.
-        if self.use_cached_propensities:
-            self.last_rule_index_set.append(f"{selected_rule} {selected_index_set}")
-        assert (self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
+
+        assert self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
                                                                                   self.matched_indices[int(selected_rule)]
-                                                                                  [int(selected_index_set)])))
-
-        if self.debug:
-            self.collectStats(int(selected_rule),
-                              int(selected_index_set),
-                              total_propensity)
-
+                                                                                  [int(selected_index_set)]))
+        
+        self.postSimulationActions(int(selected_rule), int(selected_index_set), 0)
+        
         return current_time + u2
 class LaplaceGillespieSolver(GillespieSolver):
     def __init__(self, no_rules_behaviour:str = "step", debug:bool = True) -> None:
@@ -453,9 +468,6 @@ class TauLeapSolver(Solver):
                     negative_valued = not self.rules[int(selected_rule)].triggerAttemptedRuleChange(np.take(self.compartments,
                                                                                   self.matched_indices[int(selected_rule)]
                                                                                   [int(selected_compartments)]), times_triggered, self.allow_negative)
-                    if self.use_cached_propensities:
-                        self.last_rule_index_set.append(rule_comp_key)
                     # Not collecting times_triggered here (should be!)
-                    if self.debug:
-                        self.collectStats(int(selected_rule), int(selected_compartments), total_propensity)
+                    self.postSimulationActions(int(selected_rule), int(selected_compartments), total_propensity)
         return current_time + self.time_step
