@@ -309,7 +309,6 @@ class GillespieNRMSolver(Solver):
         else:
             for rule_i, index_set_i in rules_and_matched_indices:
                 update_propensity_func(rule_i, index_set_i, model_state_values)
-
     @override
     def simulateOneStep(self, current_time):
         self.current_time = current_time
