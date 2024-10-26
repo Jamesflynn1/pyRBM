@@ -243,7 +243,7 @@ class GillespieNRMSolver(Solver):
         super().__init__(True, no_rules_behaviour, debug)
         self.update_propensity_function = self.updateGivenPropensityNRM
 
-    def initialize(self, compartments, rules, matched_indices, model_state: ModelState, propensity_update_dict: dict | None = None) -> None:
+    def initialize(self, compartments, rules, matched_indices, model_state: ModelState, propensity_update_dict: Union[dict, None] = None) -> None:
         # Ensure that the rule index set updates itself, a new time will need to be generated
         # as the time was popped for that previous rule.
         super().initialize(compartments, rules, matched_indices, model_state, propensity_update_dict)

@@ -336,6 +336,13 @@ class Model:
         else:
             raise ValueError("Model/solver not initialized: initialize model before the solver.")
 
+    def returnSimulationPerformanceStats(self) -> dict[str, Union[float, int]]:
+        return {
+            "simulations":self.simulation_number,
+            "mean_iterations":np.mean(self.simulation_iterations), "std_iterations":np.std(self.simulation_iterations),
+            "mean_simulation_time":np.mean(self.simulation_elapsed_times), "std_simulation_time":np.std(self.simulation_elapsed_times),
+        }
+    
     def printSimulationPerformanceStats(self) -> None:
         """ Prints (computational) performance statistics for the current model (since its inception).
         
@@ -344,10 +351,11 @@ class Model:
             Mean and standard deviation of the number of iterations per simulation.
             Mean and standard deviation of the time spent in the core simulation loop per simulation.
         """
+        perf_stats_dict = self.returnSimulationPerformanceStats()
         print("\n")
-        print(f"Completed {self.simulation_number} simulations with the following stats:")
-        print(f"Iterations:\n   Mean: {np.mean(self.simulation_iterations)}, Std: {np.std(self.simulation_iterations)}")
-        print(f"Simulation Elapsed Time:\n  Mean: {np.mean(self.simulation_elapsed_times)}, Std: {np.std(self.simulation_elapsed_times)}")
+        print(f"Completed {perf_stats_dict['simulations']} simulations with the following stats:")
+        print(f"Iterations:\n   Mean: {perf_stats_dict['mean_iterations']}, Std: {perf_stats_dict['std_iterations']}")
+        print(f"Simulation Elapsed Time:\n  Mean: {perf_stats_dict['mean_simulation_time']}, Std: {perf_stats_dict['std_simulation_time']}")
     
 class SolverData:
     def __init__(self, fields:Iterable[str]) -> None:

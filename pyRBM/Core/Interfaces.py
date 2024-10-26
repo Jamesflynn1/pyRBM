@@ -30,4 +30,3 @@ class ICompartment:
                 self.compartment_constants[self.comp_prefix+standardised_constant] = constants_dict[entered_constant]
             else:
                 raise ValueError(f"Provided constant {self.comp_prefix+standardised_constant}, does not exist at current compartment {self.name}\n Defined compartment constants: {str(self.compartment_constants)}")
-class Rule:
