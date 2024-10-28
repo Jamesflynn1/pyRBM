@@ -155,7 +155,8 @@ def returnMatchedRulesDict(rules:dict[str,dict[str,Any]], compartments:dict[str,
         for concrete_rule_type in matched_rule:
             concrete_rule_dict = {"rule_num":rule_i, "rule_name":rule["name"],
                                   "rule_compartment_types":concrete_rule_type,
-                                  "matching_indices":matched_rule[concrete_rule_type]}
+                                  "matching_indices":matched_rule[concrete_rule_type],
+                                  "wait_time_distribution":rule["wait_time_distribution"]}
             # Assume all compartments have the same classes - will be asserted in later versions.
             example_compartments:list[dict[str,Any]] = []
             # Take the first set as an example

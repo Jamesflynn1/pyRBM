@@ -10,7 +10,7 @@ from pyRBM.Simulation.State import ModelState
 class Solver:
     def __init__(self, use_cached_propensities:bool = True,
                  no_rules_behaviour:str = "step", debug:bool = True,
-                 random_generator=None, default_time_step=1) -> None:
+                 default_time_step=1) -> None:
         self.use_cached_propensities = use_cached_propensities
 
         # Either step or exit
@@ -18,7 +18,6 @@ class Solver:
         self.no_rules_behaviour = no_rules_behaviour
         self.default_step = default_time_step
         self.debug = debug
-        self._random_source = np.random.default_rng(random_generator)
     
     def hasFutureNonZeroPropensity(self, rules_to_check):
 
@@ -54,7 +53,7 @@ class Solver:
                 return None
     
     def initialize(self, compartments, rules,
-                   matched_indices, model_state:ModelState,
+                   matched_indices, model_state:ModelState, random_generator,
                    propensity_update_dict:Optional[dict] = None) -> None:
         self.compartments = compartments
         self.rules = rules
@@ -66,6 +65,7 @@ class Solver:
         if self.no_rules_behaviour:
             self.continue_prior_step = False
         self.propensity_update_dict = propensity_update_dict if propensity_update_dict is not None else {}
+        self.random_source = random_generator
 
         self.reset()
 
@@ -172,7 +172,7 @@ class GillespieSolver(Solver):
         
         # Generate 0 to 1
         # Random rule
-        u1, r2 = self._random_source.random(2)
+        u1, r2 = self.random_source.random(2)
         u2 = (-np.log(r2))/total_propensity
         # Random time
         cumulative_prop = 0
@@ -209,7 +209,7 @@ class GillespieFRMSolver(Solver):
         self.performPropensityUpdates(self.update_propensity_function)
 
         # Generate a random number for each subrule, this will be used to calculate the next event time
-        r_i = -np.log(self._random_source.random(len(self.propensities)))
+        r_i = -np.log(self.random_source.random(len(self.propensities)))
 
         min_time = None
         min_rule_index = None
@@ -243,7 +243,7 @@ class GillespieNRMSolver(Solver):
         super().__init__(True, no_rules_behaviour, debug)
         self.update_propensity_function = self.updateGivenPropensityNRM
 
-    def initialize(self, compartments, rules, matched_indices, model_state: ModelState, propensity_update_dict: dict | None = None) -> None:
+    def initialize(self, compartments, rules, matched_indices, model_state: ModelState, propensity_update_dict: Union[dict, None] = None) -> None:
         # Ensure that the rule index set updates itself, a new time will need to be generated
         # as the time was popped for that previous rule.
         super().initialize(compartments, rules, matched_indices, model_state, propensity_update_dict)
@@ -278,7 +278,7 @@ class GillespieNRMSolver(Solver):
 
             if rule_index_string in self.last_rule_index_set or key_missing:
             # Compute the new time by t + tau and save this rather than tau as in the FRM.
-                time = self.current_time + ((-np.log(self._random_source.random(1)[0]))/new_propensity)
+                time = self.current_time + ((-np.log(self.random_source.random(1)[0]))/new_propensity)
             else:
                 old_propensity = self.propensities[rule_index_string]
                 time = self.current_time + (old_propensity/new_propensity)*(old_time-self.current_time)
@@ -377,7 +377,7 @@ class HKOSolver(Solver):
             return self.processNoRuleEvent(current_time)
         # Generate 0 to 1
         # Random rule
-        u1, r2 = self._random_source.random(2)
+        u1, r2 = self.random_source.random(2)
         u2 = -np.log(r2)*(1/total_propensity)
         # Random time
         cumulative_rule_prop = 0
@@ -419,18 +419,14 @@ class LaplaceGillespieSolver(GillespieSolver):
         # We require use of propensity caching as we only redraw when the update the propensity.
         super().__init__(True, no_rules_behaviour, debug)
 
-        self.wait_time_distribs = returnDistribFunctions()
-
-
         self.update_propensity_function = self.updateLaplacePropensity
 
     def updateLaplacePropensity(self, rule_i:int, index_set_i:int,
                               model_state_values:list) -> None:
         rule = self.rules[rule_i]
-        new_propensity = rule.returnPropensity(np.take(self.compartments,
+        new_rate = rule.returnEventRate(np.take(self.compartments,
                                                        self.matched_indices[rule_i][index_set_i]),
-                                                       model_state_values, index_set_i)
-        new_rate = self.wait_time_distribs[self.rule.wait_time_distribtion](new_propensity)
+                                                       model_state_values, index_set_i, is_laplace=True)
         if self.use_cached_propensities:
             rate_diff = (new_rate - self.propensities.get(f"{rule_i} {index_set_i}", 0.0))
             self.total_propensity += rate_diff
@@ -461,7 +457,7 @@ class TauLeapSolver(Solver):
         for rule_comp_key, rule_comp_propensity in self.propensities.items():
             negative_valued = True
             while negative_valued:
-                times_triggered = self._random_source.poisson(lam=rule_comp_propensity*self.time_step)
+                times_triggered = self.random_source.poisson(lam=rule_comp_propensity*self.time_step)
                 selected_rule, selected_compartments = rule_comp_key.split(" ")
 
                 if times_triggered > 0:

@@ -38,7 +38,7 @@ class Model:
         distance_func (Callable): a function that returns a pairwise distance matrix over all compartments 
 
     """
-    def __init__(self, model_name:str) -> None:
+    def __init__(self, model_name:str, random_generator=None) -> None:
         self.contains_builtin_classes = True
         self.model_name = model_name
         self.defined_classes:Optional[list[str]] = None
@@ -47,6 +47,8 @@ class Model:
 
         self.model_initialized = False
         self.solver_initialized = False
+
+        self.random_state = np.random.default_rng(random_generator)
 
     def createCompartments(self, compartment_constants) -> dict[str, dict[str, Any]]:
         """ Parse all compartments returned from the `self._create_rules_func`, perform rule validity and cohesion checks and return them in dictionary format.
@@ -176,7 +178,8 @@ class Model:
         self.classes, self.builtin_classes = loadClasses(classes_dict=self._classes_dict)
         self.compartments = loadCompartments(build_compartments_dict=self._compartments_dict)
         self.rules, self.matched_indices = loadMatchedRules(self.compartments,
-                                                            num_builtin_classes=len(self.builtin_classes),
+                                                            num_builtin_classes=len(self.builtin_classes), 
+                                                            random_state=self.random_state,
                                                             matched_rule_dict=self._matched_rules_dict)
 
         self.trajectory = Trajectory(self.compartments)
@@ -214,7 +217,7 @@ class Model:
             self.compartments = loadCompartments(build_compartments_dict=returnDefaultCompartment(self.classes))
         else:
             self.compartments = loadCompartments(compartments_filename = self.model_paths.compartments_path)
-        self.rules, self.matched_indices = loadMatchedRules(self.compartments, num_builtin_classes=len(self.builtin_classes),
+        self.rules, self.matched_indices = loadMatchedRules(self.compartments, num_builtin_classes=len(self.builtin_classes), random_state=self.random_state,
                                                                   matched_rules_filename=self.model_paths.matched_rules_path)
 
 
@@ -248,11 +251,12 @@ class Model:
             self.simulation_number = 0
 
             self.solver = solver
-            self.solver.initialize(self.compartments, self.rules, self.matched_indices, self.model_state,
+            self.solver.initialize(self.compartments, self.rules, self.matched_indices, self.model_state, self.random_state,
                                    self.rule_propensity_update_dict)
             self.solver_initialized = True
 
             self.debug = solver.debug
+
             if self.debug:
                 self.prior_iterations_data = defaultdict(list)
                 # Remove manual change required for new solver data collection fields here
@@ -336,6 +340,13 @@ class Model:
         else:
             raise ValueError("Model/solver not initialized: initialize model before the solver.")
 
+    def returnSimulationPerformanceStats(self) -> dict[str, Union[float, int]]:
+        return {
+            "simulations":self.simulation_number,
+            "mean_iterations":np.mean(self.simulation_iterations), "std_iterations":np.std(self.simulation_iterations),
+            "mean_simulation_time":np.mean(self.simulation_elapsed_times), "std_simulation_time":np.std(self.simulation_elapsed_times),
+        }
+    
     def printSimulationPerformanceStats(self) -> None:
         """ Prints (computational) performance statistics for the current model (since its inception).
         
@@ -344,10 +355,11 @@ class Model:
             Mean and standard deviation of the number of iterations per simulation.
             Mean and standard deviation of the time spent in the core simulation loop per simulation.
         """
+        perf_stats_dict = self.returnSimulationPerformanceStats()
         print("\n")
-        print(f"Completed {self.simulation_number} simulations with the following stats:")
-        print(f"Iterations:\n   Mean: {np.mean(self.simulation_iterations)}, Std: {np.std(self.simulation_iterations)}")
-        print(f"Simulation Elapsed Time:\n  Mean: {np.mean(self.simulation_elapsed_times)}, Std: {np.std(self.simulation_elapsed_times)}")
+        print(f"Completed {perf_stats_dict['simulations']} simulations with the following stats:")
+        print(f"Iterations:\n   Mean: {perf_stats_dict['mean_iterations']}, Std: {perf_stats_dict['std_iterations']}")
+        print(f"Simulation Elapsed Time:\n  Mean: {perf_stats_dict['mean_simulation_time']}, Std: {perf_stats_dict['std_simulation_time']}")
     
 class SolverData:
     def __init__(self, fields:Iterable[str]) -> None:

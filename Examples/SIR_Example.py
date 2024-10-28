@@ -4,6 +4,9 @@ import pyRBM.Core.Model as Model
 import pyRBM.Build.Compartment as Compartments
 import pyRBM.Build.RuleTemplates as BasicRules
 import pyRBM.Simulation.Solvers as Solvers
+from pyRBM.Simulation.WaitTimeDistributions import ExponentialDistribution, UniformPowerLawDistribution
+from numpy.random import default_rng
+
 
 
 epiClasses = [["S", "people"], ["I", "people"], ["R", "people"]]
@@ -25,8 +28,8 @@ class EpiCompartment(Compartments.Compartment):
         
 
 def epiLocations(args):
-    single_epi_comp = EpiCompartment("Example_SIR_Model", initial_infected=5, total_population=100,
-                                     constants={"infectivity_rate" : 0.4,
+    single_epi_comp = EpiCompartment("Example_SIR_Model", initial_infected=5, total_population=200,
+                                     constants={"infectivity_rate" : 0.8,
                                                 "recovery_rate" : 0.1,
                                                 "mortality_rate" : 0.3 })
     return single_epi_comp
@@ -36,7 +39,7 @@ def epiRules(args):
     infection = BasicRules.SingleLocationProductionRule("EpiComp",
                                                         "S", 1,
                                                         "I", 1,
-                                                       "S*(I/(S+I+R))*comp_infectivity_rate", ["S", "I","R"],
+                                                       "S*I*comp_infectivity_rate/200", ["S", "I","R"],
                                                        "Infection of Susceptible")
     recovery = BasicRules.SingleLocationProductionRule("EpiComp",
                                                        "I", 1,
@@ -47,36 +50,24 @@ def epiRules(args):
                                         "I", -1,
                                         "I*comp_mortality_rate", "I",
                                         "Death of Infected")
+    
+    infection.addWaitTimeDistribution(UniformPowerLawDistribution({"rate_spread":0.5}))
+
     return  (infection, recovery, death)
 
 
-
-
-
 model = Model.Model("Basic Epi Model")
-model.buildModel(epiClasses, epiRules, epiLocations, write_to_file = True, save_model_folder="Tests/ModelFiles/")
+model.buildModel(epiClasses, epiRules, epiLocations, write_to_file = True, save_model_folder="Tests/ModelFiles/", save_meta_rules=True)
 # Use no_rules_behaviour = "exit" when the model is constructed  such that states where the model has zero propensity are all
 # absorbing states (e.g. models with no time based model state variables in any propensity).
-model_solver = Solvers.GillespieSolver(debug=True, no_rules_behaviour="end")
+model_solver = Solvers.LaplaceGillespieSolver(debug=True, no_rules_behaviour="end")
 
 model.initializeSolver(model_solver)
 
 start_date = datetime.datetime(2001, 8, 1)
 
 # Close the matplotlib window to continue to the next simulation
-model.simulate(start_date, 40, 100000)
+model.simulate(start_date, 200, 100000)
 model.trajectory.plotAllClassesOverTime(0)
-print(model.trajectory.trajectory_compartment_values[0][-1])
-model.simulate(start_date, 40, 100000)
-model.trajectory.plotAllClassesOverTime(0)
-model.simulate(start_date, 40, 100000)
-model.trajectory.plotAllClassesOverTime(0)
-model.simulate(start_date, 40, 100000)
-model.trajectory.plotAllClassesOverTime(0)
-
-model.trajectory.plotAllClassesOverTime(0)
-model.simulate(start_date, 40, 100000)
-print(model.trajectory.trajectory_compartment_values[0][-1])
-
 model.printSimulationPerformanceStats()
-
+print(model.trajectory.trajectory_compartment_values[0][-1])

@@ -1,4 +1,3 @@
-import re
 from typing import Optional
 
 import numpy as np
@@ -6,13 +5,17 @@ import sympy
 
 from pyRBM.Simulation.Compartment import Compartment
 from pyRBM.Core.StringUtilities import replaceVarName
+from pyRBM.Simulation.WaitTimeDistributions import DistributionFactory, processDistributionString
 #from pyRBM.Simulation.WaitTimeDistributions import processDistribFunction
 class Rule:
     def __init__(self, propensity:list[str],
                  stoichiometry:list[np.ndarray],
                  rule_name:str, num_builtin_classes:int,
                  compartments:list[Compartment],
-                 rule_index_sets:list[list[int]], event_time_distrib_and_args:str = None) -> None:
+                 rule_index_sets:list[list[int]],
+                 random_source,
+                 event_time_distrib_and_args:Optional[str] = None
+                 ) -> None:
 
         assert len(stoichiometry) == len(propensity)
         compartment_names = [compartment.name for compartment in compartments]
@@ -75,11 +78,24 @@ class Rule:
             #self.propensity_function = lambda x, comp : np.dot(x, self.propensity_matrix[comp])
         else:
             raise ValueError("Unsupported Propensity in Model Loading")
+        
         self.rule_name = rule_name
         self.stoichiometry = stoichiometry
         self.contains_compartment_constant = np.array(self.contains_compartment_constant)
         self.contains_slot_match_constant = np.array(self.contains_slot_match_constant)
-
+        if event_time_distrib_and_args != "Default":
+            wait_time_distrib_name, wait_time_distrib_args =  processDistributionString(event_time_distrib_and_args)
+            self.wait_time_distrib = DistributionFactory().createDistribution(wait_time_distrib_name, wait_time_distrib_args, random_source)
+            try:
+                self.laplace_distrib_func = self.wait_time_distrib.returnRandomLaplaceFunc()
+            except:
+                self.laplace_distrib_func = None
+            try:
+                self.nmga_distrib_func = self.wait_time_distrib.returnRandomNMGAFunc()
+            except:
+                self.nmga_distrib_func = None
+        else:
+            self.wait_time_distrib = None
         #processDistribFunction(random_source ,event_time_distrib_and_args)
     def _subsituteConstants(self, formula_str:str, compartment_constants:Optional[dict], compartments_names:Optional[list]) -> str:
         # The slot to name substitution is performed prior to constant to value substitution,
@@ -111,9 +127,15 @@ class Rule:
 
         return new_values
         
-    def returnEventRate(self, random_source):
-        # TODO
-        return
+    def returnEventRate(self, compartments, builtin_classes, index_set_i, is_laplace:bool):
+        propensity = self.returnPropensity(compartments, builtin_classes, index_set_i)
+        if self.wait_time_distrib is None or propensity < 1e-18:
+            return propensity
+        else:
+            if is_laplace:
+                return self.laplace_distrib_func(propensity)
+            else:
+                return self.nmga_distrib_func(propensity)
     
     def returnPropensity(self, compartments, builtin_classes, index_set_i):
         assert(len(compartments) == len(self.stoichiometry))
