@@ -8,6 +8,7 @@ from pyRBM.Simulation.WaitTimeDistributions import ExponentialDistribution, Unif
 from numpy.random import default_rng
 
 
+
 epiClasses = [["S", "people"], ["I", "people"], ["R", "people"]]
 
 class EpiCompartment(Compartments.Compartment):
@@ -70,4 +71,3 @@ model.simulate(start_date, 200, 100000)
 model.trajectory.plotAllClassesOverTime(0)
 model.printSimulationPerformanceStats()
 print(model.trajectory.trajectory_compartment_values[0][-1])
-
