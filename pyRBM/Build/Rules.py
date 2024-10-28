@@ -8,6 +8,7 @@ import numpy as np
 import sympy
 
 from pyRBM.Core.StringUtilities import parseVarName
+from pyRBM.Simulation.WaitTimeDistributions import Distribution, DistributionFactory, processDistributionString
 
 def isNonDefaultTargetArray(target_array:list[str]) -> bool:
     """ Checks if the provided target_array contains any non default (i.e. non None or "Any"/"any") target requirmments.
@@ -79,12 +80,15 @@ class Rule:
             # If self.propensities contains a space it should error and this is checked for later.
             self.propensities[index] = value.replace(" ", "")
     
-    def addWaitTimeDistribution(self, wait_time_distrib_name:str):
-        wait_time_distribs = returnDistribFunctions()
-        if wait_time_distrib_name in wait_time_distribs:
-            self.wait_time_distrib = wait_time_distrib_name
+    def addWaitTimeDistribution(self, wait_time_distrib:Union[str, Distribution]):
+        # Here we just check that the string leads to the creation of a valid distribution.
+        if isinstance(wait_time_distrib, str):
+            wait_time_distrib_name, wait_time_distrib_args =  processDistributionString(wait_time_distrib)
+            DistributionFactory().createDistribution(wait_time_distrib_name, wait_time_distrib_args)
+            self.wait_time_distrib = wait_time_distrib
         else:
-            raise ValueError(f"Wait time distribution function: {wait_time_distrib_name} not recognised\nPlease select from {wait_time_distribs.keys()}")
+            # The distribution has already been created, just utilse the string representation.
+            self.wait_time_distrib = wait_time_distrib.returnStringRepr()
     
     def validateFormula(self, formula:str, class_symbols:dict[str, sympy.Symbol],
                         safe_num:Union[float, int] = 1) -> bool:

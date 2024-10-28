@@ -148,7 +148,7 @@ def loadCompartments(compartments_filename:Optional[str] = None,
     return compartment_list
 
 
-def loadMatchedRules(compartments,  num_builtin_classes:int, matched_rules_filename:Optional[str] = None,
+def loadMatchedRules(compartments,  num_builtin_classes:int, random_state, matched_rules_filename:Optional[str] = None,
                      matched_rule_dict:Optional[dict]=None) -> tuple[list[Rule], list[list[int]]]:
     """ Loads all rules from a model matched rules json (see ModelCreation for details).
 
@@ -177,7 +177,8 @@ def loadMatchedRules(compartments,  num_builtin_classes:int, matched_rules_filen
 
         rule = Rule(propensity=propensities, stoichiometry=stochiometries, rule_name=rules_dict["rule_name"],
                          num_builtin_classes=num_builtin_classes, compartments=compartments,
-                         rule_index_sets=rules_dict["matching_indices"])
+                         rule_index_sets=rules_dict["matching_indices"], random_source=random_state,
+                         event_time_distrib_and_args=rules_dict["wait_time_distribution"])
 
         applicable_indices.append(rules_dict["matching_indices"])
         rules_list.append(rule)
