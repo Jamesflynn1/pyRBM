@@ -1,6 +1,9 @@
 # Configuration file for the Sphinx documentation builder.
 import os
 import sys
+sys.path.append('..')
+sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('./pyRBM'))
 
 project = 'pyRBM'
@@ -8,7 +11,7 @@ copyright = '2024, James Flynn'
 author = 'James Flynn'
 
 release = '0.1'
-version = '0.1.0'
+version = '0.3.0'
 
 # -- General configuration
 
@@ -35,8 +38,12 @@ templates_path = ['_templates']
 # -- Options for HTML output
 
 html_theme = 'sphinx_rtd_theme'
+html_title = 'pyRBM'
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
 
 add_module_names = False
+
+# -- Options for Napoleon preprocessing
+napoleon_numpy_docstring = False

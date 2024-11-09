@@ -1,7 +1,10 @@
-pyRBM.Core
+pyRBM.Core package
 ==================
 
-Cache
+Submodules
+----------
+
+pyRBM.Core.Cache module
 -----------------------
 
 .. automodule:: pyRBM.Core.Cache
@@ -9,7 +12,15 @@ Cache
    :undoc-members:
    :show-inheritance:
 
-Model
+pyRBM.Core.Interfaces module
+----------------------------
+
+.. automodule:: pyRBM.Core.Interfaces
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyRBM.Core.Model module
 -----------------------
 
 .. automodule:: pyRBM.Core.Model
@@ -17,10 +28,26 @@ Model
    :undoc-members:
    :show-inheritance:
 
-Plotting
+pyRBM.Core.Plotting module
 --------------------------
 
 .. automodule:: pyRBM.Core.Plotting
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyRBM.Core.StringUtilities module
+---------------------------------
+
+.. automodule:: pyRBM.Core.StringUtilities
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pyRBM.Core
    :members:
    :undoc-members:
    :show-inheritance:

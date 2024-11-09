@@ -1,14 +1,10 @@
-pyRBM.Build
-===================
-Description
+pyRBM.Build package
 ===================
 
-The pyRBM.Build module enables the programmatic creation of Classes, Locations and Rules.
+Submodules
+----------
 
-Once all the model objects of one type are created, they should be added to the corresponding plural class (i.e. all Rule objects should be added a Rules object via )
-
-
-Classes
+pyRBM.Build.Classes module
 --------------------------
 
 .. automodule:: pyRBM.Build.Classes
@@ -16,15 +12,23 @@ Classes
    :undoc-members:
    :show-inheritance:
 
-Locations
-----------------------------
+pyRBM.Build.Compartment module
+------------------------------
 
-.. automodule:: pyRBM.Build.Locations
+.. automodule:: pyRBM.Build.Compartment
    :members:
    :undoc-members:
    :show-inheritance:
 
-RuleMatching
+pyRBM.Build.ProcessDescriptionFiles module
+------------------------------------------
+
+.. automodule:: pyRBM.Build.ProcessDescriptionFiles
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyRBM.Build.RuleMatching module
 -------------------------------
 
 .. automodule:: pyRBM.Build.RuleMatching
@@ -32,7 +36,7 @@ RuleMatching
    :undoc-members:
    :show-inheritance:
 
-RuleTemplates
+pyRBM.Build.RuleTemplates module
 --------------------------------
 
 .. automodule:: pyRBM.Build.RuleTemplates
@@ -40,7 +44,7 @@ RuleTemplates
    :undoc-members:
    :show-inheritance:
 
-Rules
+pyRBM.Build.Rules module
 ------------------------
 
 .. automodule:: pyRBM.Build.Rules
@@ -48,10 +52,18 @@ Rules
    :undoc-members:
    :show-inheritance:
 
-Utils
+pyRBM.Build.Utils module
 ------------------------
 
 .. automodule:: pyRBM.Build.Utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pyRBM.Build
    :members:
    :undoc-members:
    :show-inheritance:

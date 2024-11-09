@@ -1,15 +1,26 @@
-pyRBM.Simulation
+pyRBM.Simulation package
 ========================
 
-Location
---------------------------------
+Submodules
+----------
 
-.. automodule:: pyRBM.Simulation.Location
+pyRBM.Simulation.Compartment module
+-----------------------------------
+
+.. automodule:: pyRBM.Simulation.Compartment
    :members:
    :undoc-members:
    :show-inheritance:
 
-Rule
+pyRBM.Simulation.EventQueue module
+----------------------------------
+
+.. automodule:: pyRBM.Simulation.EventQueue
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyRBM.Simulation.Rule module
 ----------------------------
 
 .. automodule:: pyRBM.Simulation.Rule
@@ -17,7 +28,7 @@ Rule
    :undoc-members:
    :show-inheritance:
 
-RuleChain
+pyRBM.Simulation.RuleChain module
 ---------------------------------
 
 .. automodule:: pyRBM.Simulation.RuleChain
@@ -25,7 +36,7 @@ RuleChain
    :undoc-members:
    :show-inheritance:
 
-Solvers
+pyRBM.Simulation.Solvers module
 -------------------------------
 
 .. automodule:: pyRBM.Simulation.Solvers
@@ -33,7 +44,7 @@ Solvers
    :undoc-members:
    :show-inheritance:
 
-State
+pyRBM.Simulation.State module
 -----------------------------
 
 .. automodule:: pyRBM.Simulation.State
@@ -41,10 +52,34 @@ State
    :undoc-members:
    :show-inheritance:
 
-Trajectory
+pyRBM.Simulation.StaticSeries module
+------------------------------------
+
+.. automodule:: pyRBM.Simulation.StaticSeries
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyRBM.Simulation.Trajectory module
 ----------------------------------
 
 .. automodule:: pyRBM.Simulation.Trajectory
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyRBM.Simulation.WaitTimeDistributions module
+---------------------------------------------
+
+.. automodule:: pyRBM.Simulation.WaitTimeDistributions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pyRBM.Simulation
    :members:
    :undoc-members:
    :show-inheritance:
