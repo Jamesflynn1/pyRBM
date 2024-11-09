@@ -44,16 +44,18 @@ def exampleCompartments(args):
     single_comp = ExampleCompartment("Example_Name")
     return single_comp
 
-model = Model.Model("Basic Epi Model")
-model.buildModel(model_classes, exampleRules, exampleCompartments, write_to_file = True, save_model_folder="Tests/ModelFiles/")
-model_solver = Solvers.GillespieSolver(debug=True)
-model.initializeSolver(model_solver)
+if __name__ == '__main__':
 
-start_date = datetime.datetime(2001, 1, 1)
-for x in range(1000):
-    model.simulate(start_date, 365*2, 10000)
+    model = Model.Model("Basic Epi Model")
+    model.buildModel(model_classes, exampleRules, exampleCompartments, write_to_file = True, save_model_folder="Tests/ModelFiles/")
+    model_solver = Solvers.GillespieSolver(debug=True)
+    model.initializeSolver(model_solver)
 
-print(model.model_state.model_classes)
+    start_date = datetime.datetime(2001, 1, 1)
+    for x in range(1000):
+        model.simulate(start_date, 365*2, 10000)
 
-model.printSimulationPerformanceStats()
-model.trajectory.plotAllClassesOverTime(0)
+    print(model.model_state.model_classes)
+
+    model.printSimulationPerformanceStats()
+    model.trajectory.plotAllClassesOverTime(0)

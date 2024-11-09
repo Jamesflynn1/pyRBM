@@ -55,19 +55,20 @@ def epiRules(args):
 
     return  (infection, recovery, death)
 
+if __name__ == "__main__":
 
-model = Model.Model("Basic Epi Model")
-model.buildModel(epiClasses, epiRules, epiLocations, write_to_file = True, save_model_folder="Tests/ModelFiles/", save_meta_rules=True)
-# Use no_rules_behaviour = "exit" when the model is constructed  such that states where the model has zero propensity are all
-# absorbing states (e.g. models with no time based model state variables in any propensity).
-model_solver = Solvers.LaplaceGillespieSolver(debug=True, no_rules_behaviour="end")
+    model = Model.Model("Basic Epi Model")
+    model.buildModel(epiClasses, epiRules, epiLocations, write_to_file = True, save_model_folder="Tests/ModelFiles/", save_meta_rules=True)
+    # Use no_rules_behaviour = "exit" when the model is constructed  such that states where the model has zero propensity are all
+    # absorbing states (e.g. models with no time based model state variables in any propensity).
+    model_solver = Solvers.LaplaceGillespieSolver(debug=True, no_rules_behaviour="end")
 
-model.initializeSolver(model_solver)
+    model.initializeSolver(model_solver)
 
-start_date = datetime.datetime(2001, 8, 1)
+    start_date = datetime.datetime(2001, 8, 1)
 
-# Close the matplotlib window to continue to the next simulation
-model.simulate(start_date, 200, 100000)
-model.trajectory.plotAllClassesOverTime(0)
-model.printSimulationPerformanceStats()
-print(model.trajectory.trajectory_compartment_values[0][-1])
+    # Close the matplotlib window to continue to the next simulation
+    model.simulate(start_date, 200, 100000)
+    model.trajectory.plotAllClassesOverTime(0)
+    model.printSimulationPerformanceStats()
+    print(model.trajectory.trajectory_compartment_values[0][-1])
