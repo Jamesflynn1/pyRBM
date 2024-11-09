@@ -85,20 +85,20 @@ def supplyChainLocations(args):
         all_locations.append(FarmRegion(supplyChainClasses, *region_info))
 
     return all_locations
+if __name__ == '__main__':
+    model = Model.Model("Basic Crop 2")
+    model.buildModel(supplyChainClasses, returnCropRules, supplyChainLocations, write_to_file = True, save_model_folder="Tests/ModelFiles/")
+    model_solver = Solvers.GillespieSolver(debug=True)
+    #model_solver = Solvers.GillespieSolver(use_cached_propensities = True, no_rules_behaviour="step")
+    model.initializeSolver(model_solver)
 
-model = Model.Model("Basic Crop 2")
-model.buildModel(supplyChainClasses, returnCropRules, supplyChainLocations, write_to_file = True, save_model_folder="Tests/ModelFiles/")
-model_solver = Solvers.GillespieSolver(debug=True)
-#model_solver = Solvers.GillespieSolver(use_cached_propensities = True, no_rules_behaviour="step")
-model.initializeSolver(model_solver)
+    start_date = datetime.datetime(2001, 8, 1)
+    #cProfile.run('model.simulate(start_date,1000)')
 
-start_date = datetime.datetime(2001, 8, 1)
-#cProfile.run('model.simulate(start_date,1000)')
-
-model.simulate(start_date, 10000, 10000)
+    model.simulate(start_date, 10000, 10000)
 
 
-#for x in range(1000):
+    #for x in range(1000):
 
-model.printSimulationPerformanceStats()
-model.trajectory.plotAllClassesOverTime(0)
+    model.printSimulationPerformanceStats()
+    model.trajectory.plotAllClassesOverTime(0)
